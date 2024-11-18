@@ -1,33 +1,32 @@
-#ifndef POTHOLE_HPP
-#define POTHOLE_HPP
+#include "Image.hpp"
+#ifndef CIRCLE
 
 #include "Constants.hpp"
-#include "Image.hpp"
 
-class PotHole {
+class Circle {
 public:
     float x, y, radius; // Position and size
     unsigned int VAO, VBO, EBO; // OpenGL buffers
     unsigned int shaderProgram; // Shader program
     Image* texture;             // Texture for the pothole
 
-    PotHole(float x, float y, float radius)
+    Circle(float x, float y, float radius)
         : x(x), y(y), radius(radius), texture(nullptr) {
-		// Generate buffers
-		glGenVertexArrays(1, &VAO);
-		glGenBuffers(1, &VBO);
-		glGenBuffers(1, &EBO);
-	}
+        // Generate buffers
+        glGenVertexArrays(1, &VAO);
+        glGenBuffers(1, &VBO);
+        glGenBuffers(1, &EBO);
+    }
 
-    ~PotHole() {
+    ~Circle() {
         glDeleteVertexArrays(1, &VAO);
         glDeleteBuffers(1, &VBO);
         glDeleteBuffers(1, &EBO);
         if (texture) delete texture;
     }
 
-    void drawPotHole(const char* vsSource, const char* fsSource, const char* texturePath);
-    void renderPotHole();
+    virtual void drawPotHole(const char* vsSource, const char* fsSource, const char* texturePath) = 0;
+    virtual void renderPotHole() = 0;
 };
 
-#endif // !POTHOLE_HPP
+#endif // !CIRCLE

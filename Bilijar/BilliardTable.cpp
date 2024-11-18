@@ -2,7 +2,6 @@
 #define BILLIARD_TABLE_CPP
 
 #include "Constants.hpp"
-#include "Shader.hpp"
 #include "BilliardTable.hpp"
 
 // Indices for two triangles that form the quad
@@ -13,14 +12,14 @@ GLuint indices[] = {
 
 void BilliardTable::drawTable(const char* vsSource, const char* fsSource, const char* texturePath) {
     // Compile and link shaders
-    shaderProgram = createShader(vsSource, fsSource);
+    shaderProgram = Shader::createShader(vsSource, fsSource);
 
     // Vertex data
     float vertices[] = {
-        -0.75f,  0.9f,  0.0f, 1.0f,   // Top-left
-        -0.75f, -0.9f,  0.0f, 0.0f,   // Bottom-left
-         0.75f, -0.9f,  1.0f, 0.0f,   // Bottom-right
-         0.75f,  0.9f,  1.0f, 1.0f    // Top-right
+        -0.9f,  0.7f,  0.0f, 1.0f,   // Top-left
+        -0.9f, -0.7f,  0.0f, 0.0f,   // Bottom-left
+         0.9f, -0.7f,  1.0f, 0.0f,   // Bottom-right
+         0.9f,  0.7f,  1.0f, 1.0f    // Top-right
     };
 
     unsigned int stride = (2 + 2) * sizeof(float);
