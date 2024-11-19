@@ -4,12 +4,14 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
+#include <unordered_map>
 
 using namespace std;
 
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
+// Constants class
 class Constants {
 public:
 	// Constants for the window
@@ -18,113 +20,62 @@ public:
 	static const int windowHeight;
 	static const int windowResizable;
 
-	static int CalculateWindowPositionX() {
-		GLFWmonitor* primaryMonitor = glfwGetPrimaryMonitor();
-		if (!primaryMonitor) {
-			std::cerr << "Failed to get primary monitor" << std::endl;
-			return -1;
-		}
+	static int CalculateWindowPositionX();
+	static int CalculateWindowPositionY();
 
-		int monitorX, monitorY, monitorWidth, monitorHeight;
-		glfwGetMonitorWorkarea(primaryMonitor, &monitorX, &monitorY, &monitorWidth, &monitorHeight);
-
-		return monitorX + (monitorWidth - windowWidth) / 2;
-	}
-
-	static int CalculateWindowPositionY() {
-		GLFWmonitor* primaryMonitor = glfwGetPrimaryMonitor();
-		if (!primaryMonitor) {
-			std::cerr << "Failed to get primary monitor" << std::endl;
-			return -1;
-		}
-
-		int monitorX, monitorY, monitorWidth, monitorHeight;
-		glfwGetMonitorWorkarea(primaryMonitor, &monitorX, &monitorY, &monitorWidth, &monitorHeight);
-
-		return monitorY + (monitorHeight - windowHeight) / 2;
-	}
-
+	// Constants for the circles
 	static const int NUM_SEGMENTS;
 	static const float PI;
 };
 
+// Shader class
 class Shader {
 public:
-	static unsigned int compileShader(GLenum type, const char* source)
-	{
-		std::string content = "";
-		std::ifstream file(source);
-		std::stringstream ss;
-		if (file.is_open())
-		{
-			ss << file.rdbuf();
-			file.close();
-			std::cout << "Uspjesno procitao fajl sa putanje \"" << source << "\"!" << std::endl;
-		}
-		else {
-			ss << "";
-			std::cout << "Greska pri citanju fajla sa putanje \"" << source << "\"!" << std::endl;
-		}
-		std::string temp = ss.str();
-		const char* sourceCode = temp.c_str();
+	static unsigned int compileShader(GLenum type, const char* source);
+	static unsigned int createShader(const char* vsSource, const char* fsSource);
+};
 
-		int shader = glCreateShader(type);
+enum Ball_Color {
+	WHITE_COLOR,
+	BLUE_COLOR,
+	ORANGE_COLOR,
+	RED_COLOR,
+	GREEN_COLOR,
+	YELLOW_COLOR,
+	BLACK_COLOR,
+	PURPLE_COLOR,
+	PINK_COLOR,
+	BROWN_COLOR
+};
 
-		int success;
-		char infoLog[512];
-		glShaderSource(shader, 1, &sourceCode, NULL);
-		glCompileShader(shader);
+// Constants for the colors
+class Color {
+public:
+	// Color values
+	static float WHITE[];
+	static float BLUE[];
+	static float ORANGE[];
+	static float RED[];
+	static float GREEN[];
+	static float YELLOW[];
+	static float BLACK[];
+	static float PURPLE[];
+	static float PINK[];
+	static float BROWN[];
 
-		glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
-		if (success == GL_FALSE)
-		{
-			glGetShaderInfoLog(shader, 512, NULL, infoLog);
-			if (type == GL_VERTEX_SHADER)
-				printf("VERTEX");
-			else if (type == GL_FRAGMENT_SHADER)
-				printf("FRAGMENT");
-			printf(" sejder ima gresku! Greska: \n");
-			printf(infoLog);
-		}
-		return shader;
-	}
+	// Color map
+	static std::unordered_map<Ball_Color, const float*> colorMap;
 
-	static unsigned int createShader(const char* vsSource, const char* fsSource)
-	{
+	// Initialize the color map
+	static void initColorMap();
 
-		unsigned int program;
-		unsigned int vertexShader;
-		unsigned int fragmentShader;
-
-		program = glCreateProgram();
-
-		vertexShader = compileShader(GL_VERTEX_SHADER, vsSource);
-		fragmentShader = compileShader(GL_FRAGMENT_SHADER, fsSource);
-
-
-		glAttachShader(program, vertexShader);
-		glAttachShader(program, fragmentShader);
-
-		glLinkProgram(program);
-		glValidateProgram(program);
-
-		int success;
-		char infoLog[512];
-		glGetProgramiv(program, GL_VALIDATE_STATUS, &success);
-		if (success == GL_FALSE)
-		{
-			glGetShaderInfoLog(program, 512, NULL, infoLog);
-			std::cout << "Objedinjeni sejder ima gresku! Greska: \n";
-			std::cout << infoLog << std::endl;
-		}
-
-		glDetachShader(program, vertexShader);
-		glDeleteShader(vertexShader);
-		glDetachShader(program, fragmentShader);
-		glDeleteShader(fragmentShader);
-
-		return program;
-	}
+	// Constructor
+	float r, g, b;
+	Color() : r(0), g(0), b(0) {}
+	Color(Color& color) : r(color.r), g(color.g), b(color.b) {}
+	Color(float r, float g, float b) : r(r), g(g), b(b) {}
+	Color(float color[]) : r(color[0]), g(color[1]), b(color[2]) {}
+	Color(Ball_Color color) : r(colorMap[color][0]), g(colorMap[color][1]), b(colorMap[color][2]) {}
 };
 
 #endif // CONSTANTS_HPP

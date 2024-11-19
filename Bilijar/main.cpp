@@ -4,6 +4,7 @@
 
 #include "BilliardTable.hpp"
 #include "TableEdge.hpp"
+#include "BilliardBall.hpp"
 
 using namespace std;
 
@@ -76,6 +77,21 @@ int main() {
     PotHole potHole6(0.005f, -0.405f, 0.04f);
     potHole6.draw("basic.vert", "circle.frag", nullptr);
 
+    BilliardBall cueBall(-0.45f, 0.0f, 0.03f, BilliardBallType::CUE, Color::WHITE, 0);
+    cueBall.draw("basic.vert", "ball.frag", nullptr);
+
+    BilliardBall yellowBall(0.385f, 0.0f, 0.03f, BilliardBallType::SOLID, Color::YELLOW, 0);
+    yellowBall.draw("basic.vert", "ball.frag", nullptr);
+
+    BilliardBall blackBall(0.451f, 0.0f, 0.03f, BilliardBallType::BLACK, Color::BLACK, 0);
+    blackBall.draw("basic.vert", "ball.frag", nullptr);
+
+    BilliardBall redBall(0.517f, 0.0f, 0.03f, BilliardBallType::SOLID, Color::RED, 0);
+    redBall.draw("basic.vert", "ball.frag", nullptr);
+
+    BilliardBall blueBall(0.58f, 0.0f, 0.03f, BilliardBallType::SOLID, Color::BLUE, 0);
+    blueBall.draw("basic.vert", "ball.frag", nullptr);
+
     while (!glfwWindowShouldClose(window)) {
         if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
             glfwSetWindowShouldClose(window, GL_TRUE);
@@ -102,6 +118,13 @@ int main() {
         potHole4.render();
         potHole5.render();
         potHole6.render();
+
+        // Render the cue ball
+        cueBall.render();
+        blackBall.render();
+        yellowBall.render();
+        redBall.render();
+        blueBall.render();
 
         glfwSwapBuffers(window);
         glfwPollEvents();

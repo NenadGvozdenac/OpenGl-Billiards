@@ -3,14 +3,25 @@
 
 #include "BilliardBall.hpp"
 
-BilliardBall::BilliardBall(float x, float y, float radius)
-	: Circle(x, y, radius), vx(0), vy(0), mass(1) {}
+BilliardBall::BilliardBall(float x, float y, float radius, BilliardBallType ballType, float color[], int number)
+	: Circle(x, y, radius), type(ballType), number(number), mass(1), vx(0), vy(0) {
+	this->color = Color(color);
+}
 
-BilliardBall::BilliardBall(float x, float y, float radius, float vx, float vy, float mass)
-	: Circle(x, y, radius), vx(vx), vy(vy), mass(mass) {}
+BilliardBall::BilliardBall(float x, float y, float radius, float vx, float vy, float mass, BilliardBallType ballType, int number)
+	: Circle(x, y, radius), vx(vx), vy(vy), mass(mass), type(ballType), number(number) {}
 
 void BilliardBall::draw(const char* vsSource, const char* fsSource, const char* texturePath) {
 	shaderProgram = Shader::createShader(vsSource, fsSource);
+
+	// Set up color uniform
+	GLint colorUniformLocation = glGetUniformLocation(shaderProgram, "ballColor");
+	glUseProgram(shaderProgram);
+
+	// Pass the color values to the shader
+	glUniform3f(colorUniformLocation, color.r, color.g, color.b);
+
+	glUseProgram(0); // Unbind the shader program when done
 
 	// Generate the circle vertices
 	for (int i = -1; i <= Constants::NUM_SEGMENTS; i++) {
@@ -37,6 +48,11 @@ void BilliardBall::draw(const char* vsSource, const char* fsSource, const char* 
 	glBindVertexArray(0);
 
 	// Load the texture
+	if (texturePath == nullptr) {
+		cerr << "Texture path is null, skipping the loading." << endl;
+		return;
+	}
+
 	texture = new Image(texturePath);
 	if (!texture->loadImage()) {
 		cerr << "Failed to load image" << endl;
@@ -48,8 +64,14 @@ void BilliardBall::render() {
 	glUseProgram(shaderProgram);
 	glBindVertexArray(VAO);
 
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, texture->getTextureID());
+	// Re-apply color uniform in case the color changes dynamically
+	GLint colorUniformLocation = glGetUniformLocation(shaderProgram, "ballColor");
+	glUniform3f(colorUniformLocation, color.r, color.g, color.b);
+
+	if (texture != nullptr) {
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, texture->getTextureID());
+	}
 
 	glDrawArrays(GL_TRIANGLE_FAN, 0, Constants::NUM_SEGMENTS + 2);
 
