@@ -43,6 +43,9 @@ public:
 
 		return monitorY + (monitorHeight - windowHeight) / 2;
 	}
+
+	static const int NUM_SEGMENTS;
+	static const float PI;
 };
 
 class Shader {

@@ -59,22 +59,22 @@ int main() {
     rightEdge.drawEdge("basic.vert", "edgefrag.frag");
 
     PotHole potHole1(0.725f, 0.39f, 0.04f);
-    potHole1.drawPotHole("basic.vert", "circle.frag", nullptr);
+    potHole1.draw("basic.vert", "circle.frag", nullptr);
 
     PotHole potHole2(-0.713f, 0.39f, 0.04f);
-    potHole2.drawPotHole("basic.vert", "circle.frag", nullptr);
+    potHole2.draw("basic.vert", "circle.frag", nullptr);
 
     PotHole potHole3(0.725f, -0.376f, 0.04f);
-    potHole3.drawPotHole("basic.vert", "circle.frag", nullptr);
+    potHole3.draw("basic.vert", "circle.frag", nullptr);
 
     PotHole potHole4(-0.715f, -0.378f, 0.04f);
-    potHole4.drawPotHole("basic.vert", "circle.frag", nullptr);
+    potHole4.draw("basic.vert", "circle.frag", nullptr);
 
     PotHole potHole5(0.005f, 0.42f, 0.04f);
-    potHole5.drawPotHole("basic.vert", "circle.frag", nullptr);
+    potHole5.draw("basic.vert", "circle.frag", nullptr);
 
     PotHole potHole6(0.005f, -0.405f, 0.04f);
-    potHole6.drawPotHole("basic.vert", "circle.frag", nullptr);
+    potHole6.draw("basic.vert", "circle.frag", nullptr);
 
     while (!glfwWindowShouldClose(window)) {
         if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
@@ -96,12 +96,12 @@ int main() {
         rightEdge.renderEdge();
 
         // Render the pothole
-        potHole1.renderPotHole();
-        potHole2.renderPotHole();
-        potHole3.renderPotHole();
-        potHole4.renderPotHole();
-        potHole5.renderPotHole();
-        potHole6.renderPotHole();
+        potHole1.render();
+        potHole2.render();
+        potHole3.render();
+        potHole4.render();
+        potHole5.render();
+        potHole6.render();
 
         glfwSwapBuffers(window);
         glfwPollEvents();

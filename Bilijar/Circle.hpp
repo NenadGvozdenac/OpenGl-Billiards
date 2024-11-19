@@ -10,6 +10,9 @@ public:
     unsigned int shaderProgram; // Shader program
     Image* texture;             // Texture for the pothole
 
+    // Buffer for drawing the circle
+    float circle_buf[64] = {0};
+
     Circle(float x, float y, float radius)
         : x(x), y(y), radius(radius), shaderProgram(0), texture(nullptr) {
         // Generate buffers
@@ -25,8 +28,8 @@ public:
         if (texture) delete texture;
     }
 
-    virtual void drawPotHole(const char* vsSource, const char* fsSource, const char* texturePath) = 0;
-    virtual void renderPotHole() = 0;
+    virtual void draw(const char* vsSource, const char* fsSource, const char* texturePath) = 0;
+    virtual void render() = 0;
 };
 
 #endif // !CIRCLE
