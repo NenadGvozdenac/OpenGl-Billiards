@@ -1,6 +1,8 @@
 #ifndef TABLE_EDGE_HPP
 #define TABLE_EDGE_HPP
 
+#include "Rectangle.hpp"
+
 enum TableEdgeType {
 	TOP,
 	BOTTOM,
@@ -8,18 +10,8 @@ enum TableEdgeType {
 	RIGHT
 };
 
-class TableEdge {
+class TableEdge : public Rectangle {
 public:
-	float x1, y1;
-	float x2, y2;
-	float x3, y3;
-	float x4, y4;
-	unsigned int shaderProgram;
-
-	unsigned int VAO;
-	unsigned int VBO;
-	unsigned int EBO;
-
 	bool visible;
 	TableEdgeType type;
 

@@ -6,7 +6,7 @@
 class Circle {
 public:
     float x, y, radius; // Position and size
-    unsigned int VAO, VBO, EBO; // OpenGL buffers
+    unsigned int VAO, VBO, EBO, TBO; // OpenGL buffers
     unsigned int shaderProgram; // Shader program
     Image* texture;             // Texture for the pothole
 
@@ -19,6 +19,7 @@ public:
         glGenVertexArrays(1, &VAO);
         glGenBuffers(1, &VBO);
         glGenBuffers(1, &EBO);
+        glGenBuffers(1, &TBO);
     }
 
     ~Circle() {

@@ -5,10 +5,11 @@
 #include "BilliardTable.hpp"
 #include "TableEdge.hpp"
 #include "BilliardBall.hpp"
+#include "Cue.hpp"
 
 using namespace std;
 
-const bool DISPLAY_EDGES = true;
+const bool DISPLAY_EDGES = false;
 
 int main() {
     if (!glfwInit()) {
@@ -80,17 +81,53 @@ int main() {
     BilliardBall cueBall(-0.45f, 0.0f, 0.03f, BilliardBallType::CUE, Color::WHITE, 0);
     cueBall.draw("basic.vert", "ball.frag", nullptr);
 
-    BilliardBall yellowBall(0.385f, 0.0f, 0.03f, BilliardBallType::SOLID, Color::YELLOW, 0);
-    yellowBall.draw("basic.vert", "ball.frag", nullptr);
+    BilliardBall solidYellowBall(0.32f, 0.0f, 0.03f, BilliardBallType::SOLID, Color::YELLOW, 0);
+    solidYellowBall.draw("basic.vert", "ball.frag", nullptr);
 
-    BilliardBall blackBall(0.451f, 0.0f, 0.03f, BilliardBallType::BLACK, Color::BLACK, 0);
+    BilliardBall solidRedBall(0.37f, 0.03f, 0.03f, BilliardBallType::SOLID, Color::RED, 0);
+    solidRedBall.draw("basic.vert", "ball.frag", nullptr);
+
+    BilliardBall stripedBlueBall(0.37f, -0.03f, 0.03f, BilliardBallType::STRIPE, Color::BLUE, 0);
+    stripedBlueBall.draw("basic.vert", "ball.frag", nullptr);
+
+    BilliardBall stripedOrangeBall(0.42f, 0.06f, 0.03f, BilliardBallType::STRIPE, Color::ORANGE, 0);
+    stripedOrangeBall.draw("basic.vert", "ball.frag", nullptr);
+
+    BilliardBall blackBall(0.42f, 0.0f, 0.03f, BilliardBallType::BLACK, Color::BLACK, 0);
     blackBall.draw("basic.vert", "ball.frag", nullptr);
 
-    BilliardBall redBall(0.517f, 0.0f, 0.03f, BilliardBallType::SOLID, Color::RED, 0);
-    redBall.draw("basic.vert", "ball.frag", nullptr);
+    BilliardBall solidGreenBall(0.42f, -0.06f, 0.03f, BilliardBallType::SOLID, Color::GREEN, 0);
+    solidGreenBall.draw("basic.vert", "ball.frag", nullptr);
 
-    BilliardBall blueBall(0.58f, 0.0f, 0.03f, BilliardBallType::SOLID, Color::BLUE, 0);
-    blueBall.draw("basic.vert", "ball.frag", nullptr);
+    BilliardBall solidBlueBall(0.47f, 0.09f, 0.03f, BilliardBallType::SOLID, Color::BLUE, 0);
+    solidBlueBall.draw("basic.vert", "ball.frag", nullptr);
+
+    BilliardBall stripedBrownBall(0.47f, 0.03f, 0.03f, BilliardBallType::STRIPE, Color::BROWN, 0);
+    stripedBrownBall.draw("basic.vert", "ball.frag", nullptr);
+
+    BilliardBall solidPurpleBall(0.47f, -0.03f, 0.03f, BilliardBallType::SOLID, Color::PURPLE, 0);
+    solidPurpleBall.draw("basic.vert", "ball.frag", nullptr);
+
+    BilliardBall stripedYellowBall(0.47f, -0.09f, 0.03f, BilliardBallType::STRIPE, Color::YELLOW, 0);
+    stripedYellowBall.draw("basic.vert", "ball.frag", nullptr);
+
+    BilliardBall solidBrownBall(0.52f, 0.12f, 0.03f, BilliardBallType::SOLID, Color::BROWN, 0);
+    solidBrownBall.draw("basic.vert", "ball.frag", nullptr);
+
+    BilliardBall stripedPurpleBall(0.52f, 0.06f, 0.03f, BilliardBallType::STRIPE, Color::PURPLE, 0);
+    stripedPurpleBall.draw("basic.vert", "ball.frag", nullptr);
+
+    BilliardBall solidOrangeBall(0.52f, 0.0f, 0.03f, BilliardBallType::SOLID, Color::ORANGE, 0);
+    solidOrangeBall.draw("basic.vert", "ball.frag", nullptr);
+
+    BilliardBall stripedRedBall(0.52f, -0.06f, 0.03f, BilliardBallType::STRIPE, Color::RED, 0);
+    stripedRedBall.draw("basic.vert", "ball.frag", nullptr);
+
+    BilliardBall stripedGreenBall(0.52f, -0.12f, 0.03f, BilliardBallType::STRIPE, Color::GREEN, 0);
+    stripedGreenBall.draw("basic.vert", "ball.frag", nullptr);
+
+    Cue cue(&cueBall, 1.f, 0.025f, 240, true, Color::BROWN);
+    cue.draw("basic.vert", "ball.frag", nullptr);
 
     while (!glfwWindowShouldClose(window)) {
         if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
@@ -121,10 +158,27 @@ int main() {
 
         // Render the cue ball
         cueBall.render();
+
+        // Render the other balls
         blackBall.render();
-        yellowBall.render();
-        redBall.render();
-        blueBall.render();
+        solidYellowBall.render();
+        stripedOrangeBall.render();
+        solidOrangeBall.render();
+        solidRedBall.render();
+        stripedBlueBall.render();
+        solidGreenBall.render();
+        solidBlueBall.render();
+        stripedBrownBall.render();
+        solidPurpleBall.render();
+        stripedYellowBall.render();
+        solidBrownBall.render();
+        stripedPurpleBall.render();
+        solidOrangeBall.render();
+        stripedRedBall.render();
+        stripedGreenBall.render();
+
+        // Render the cue
+        cue.render();
 
         glfwSwapBuffers(window);
         glfwPollEvents();
