@@ -3,8 +3,11 @@
 #include "Constants.hpp"
 
 #include "BilliardTable.hpp"
+#include "TableEdge.hpp"
 
 using namespace std;
+
+const bool DISPLAY_EDGES = true;
 
 int main() {
     if (!glfwInit()) {
@@ -36,7 +39,25 @@ int main() {
     // Create and configure the billiard table
     BilliardTable table;
     table.drawTable("basic.vert", "basic.frag", "strides/billiard_table.png");
-    
+
+    TableEdge leftUpperEdge(-0.645f, 0.365f, -0.67f, 0.395f, -0.0325f, 0.395f, -0.0325f, 0.365f, TableEdgeType::TOP, DISPLAY_EDGES);
+    leftUpperEdge.drawEdge("basic.vert", "edgefrag.frag");
+
+    TableEdge rightUpperEdge(0.0465f, 0.365f, 0.0465f, 0.395f, 0.685f, 0.395f, 0.655f, 0.365f, TableEdgeType::TOP, DISPLAY_EDGES);
+    rightUpperEdge.drawEdge("basic.vert", "edgefrag.frag");
+
+    TableEdge leftLowerEdge(-0.645f, -0.355f, -0.67f, -0.385f, -0.0325f, -0.385f, -0.0325f, -0.355f, TableEdgeType::BOTTOM, DISPLAY_EDGES);
+    leftLowerEdge.drawEdge("basic.vert", "edgefrag.frag");
+
+    TableEdge rightLowerEdge(0.0465f, -0.355f, 0.0465f, -0.385f, 0.685f, -0.385f, 0.655f, -0.355f, TableEdgeType::BOTTOM, DISPLAY_EDGES);
+    rightLowerEdge.drawEdge("basic.vert", "edgefrag.frag");
+
+    TableEdge leftEdge(-0.725f, -0.343f, -0.725f, 0.35f, -0.695f, 0.32f, -0.695f, -0.308f, TableEdgeType::LEFT, DISPLAY_EDGES);
+    leftEdge.drawEdge("basic.vert", "edgefrag.frag");
+
+    TableEdge rightEdge(0.733f, -0.343f, 0.733f, 0.35f, 0.703f, 0.32f, 0.703f, -0.308f, TableEdgeType::RIGHT, DISPLAY_EDGES);
+    rightEdge.drawEdge("basic.vert", "edgefrag.frag");
+
     PotHole potHole1(0.725f, 0.39f, 0.04f);
     potHole1.drawPotHole("basic.vert", "circle.frag", nullptr);
 
@@ -65,6 +86,14 @@ int main() {
 
         // Render the table
         table.renderTable();
+
+        // Render the edges
+        leftUpperEdge.renderEdge();
+        rightUpperEdge.renderEdge();
+        leftLowerEdge.renderEdge();
+        rightLowerEdge.renderEdge();
+        leftEdge.renderEdge();
+        rightEdge.renderEdge();
 
         // Render the pothole
         potHole1.renderPotHole();

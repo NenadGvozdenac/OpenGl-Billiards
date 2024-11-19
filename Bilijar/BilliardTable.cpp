@@ -4,15 +4,14 @@
 #include "Constants.hpp"
 #include "BilliardTable.hpp"
 
-// Indices for two triangles that form the quad
-GLuint indices[] = {
-    0, 1, 2,   // First triangle
-    0, 2, 3    // Second triangle
-};
-
 void BilliardTable::drawTable(const char* vsSource, const char* fsSource, const char* texturePath) {
     // Compile and link shaders
     shaderProgram = Shader::createShader(vsSource, fsSource);
+
+    GLuint indices[] = {
+        0, 1, 2,   // First triangle
+        0, 2, 3    // Second triangle
+    };
 
     // Vertex data
     float vertices[] = {
