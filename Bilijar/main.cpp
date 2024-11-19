@@ -36,7 +36,7 @@ int main() {
     // Create and configure the billiard table
     BilliardTable table;
     table.drawTable("basic.vert", "basic.frag", "strides/billiard_table.png");
-
+    
     PotHole potHole1(0.725f, 0.39f, 0.04f);
     potHole1.drawPotHole("basic.vert", "circle.frag", nullptr);
 

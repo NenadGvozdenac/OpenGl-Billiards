@@ -10,6 +10,8 @@ const float PI = 3.14159265359f;
 
 float circle[(NUM_SEGMENTS + 2) * 2] = { 0 };
 
+PotHole::PotHole(float x, float y, float radius) : Circle(x, y, radius) {}
+
 void PotHole::drawPotHole(const char* vsSource, const char* fsSource, const char* texturePath) {
     shaderProgram = Shader::createShader(vsSource, fsSource);
 
@@ -23,11 +25,6 @@ void PotHole::drawPotHole(const char* vsSource, const char* fsSource, const char
     for (int i = 0; i < (NUM_SEGMENTS + 2) * 2; i += 2) {
 		circle[i] += x;
 		circle[i + 1] += y;
-	}
-
-    // Print the circle vertices
-    for (int i = 0; i < (NUM_SEGMENTS + 2) * 2; i += 2) {
-		cout << circle[i] << " " << circle[i + 1] << endl;
 	}
 
     glGenVertexArrays(1, &VAO);

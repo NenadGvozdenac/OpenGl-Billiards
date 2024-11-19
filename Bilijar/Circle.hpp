@@ -11,7 +11,7 @@ public:
     Image* texture;             // Texture for the pothole
 
     Circle(float x, float y, float radius)
-        : x(x), y(y), radius(radius), texture(nullptr) {
+        : x(x), y(y), radius(radius), shaderProgram(0), texture(nullptr) {
         // Generate buffers
         glGenVertexArrays(1, &VAO);
         glGenBuffers(1, &VBO);
