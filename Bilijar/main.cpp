@@ -1,5 +1,8 @@
 #define _CRT_SECURE_NO_WARNINGS
 
+#include <thread>
+#include <chrono>
+
 #include "Constants.hpp"
 
 #include "BilliardTable.hpp"
@@ -10,6 +13,11 @@
 using namespace std;
 
 const bool DISPLAY_EDGES = false;
+
+const float TARGET_FPS = 60.0f;
+const float TARGET_FRAME_TIME = 1.0f / TARGET_FPS;
+
+bool GAME_STARTED = false;
 
 int main() {
     if (!glfwInit()) {
@@ -126,13 +134,61 @@ int main() {
     BilliardBall stripedGreenBall(0.52f, -0.12f, 0.03f, BilliardBallType::STRIPE, Color::GREEN, 0);
     stripedGreenBall.draw("basic.vert", "ball.frag", nullptr);
 
-    Cue cue(&cueBall, 1.f, 0.025f, 240, true, Color::BROWN);
+    Cue cue(&cueBall, 1.f, 0.025f, 180, true, Color::BROWN);
     cue.draw("basic.vert", "ball.frag", nullptr);
 
+    float previousTime = glfwGetTime();  // Initialize previous time
+    float dt = 0.0f;  // Delta time
+
+    bool RECREATED_CUE = false;
+
     while (!glfwWindowShouldClose(window)) {
+        float frameStartTime = glfwGetTime();
+
         if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
             glfwSetWindowShouldClose(window, GL_TRUE);
         }
+
+        // Get current time and compute delta time (dt)
+        float currentTime = glfwGetTime();
+        dt = currentTime - previousTime;  // Calculate the difference
+        previousTime = currentTime;  // Update previousTime for the next iteration
+
+        // Left click
+        if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS) {
+			double xpos, ypos;
+			glfwGetCursorPos(window, &xpos, &ypos);
+
+			cue.rotateCue(xpos, ypos);
+		}
+
+        if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS && !cueBall.moving()) {
+            float angle = cue.angle;
+            cueBall.hitBall(angle, Constants::BALL_SPEED);
+            GAME_STARTED = true;
+            RECREATED_CUE = false;
+		}
+
+        if (cueBall.moving()) {
+            cue.visible = false;
+
+            // Check for collisions with the edges
+            cueBall.checkIfCollisionWithWall(&leftUpperEdge);
+            cueBall.checkIfCollisionWithWall(&rightUpperEdge);
+            cueBall.checkIfCollisionWithWall(&leftLowerEdge);
+            cueBall.checkIfCollisionWithWall(&rightLowerEdge);
+            cueBall.checkIfCollisionWithWall(&rightEdge);
+            cueBall.checkIfCollisionWithWall(&leftEdge);
+
+        } else if(GAME_STARTED) {
+            cue.visible = true;
+
+            if (!RECREATED_CUE) {
+                cue = Cue(&cueBall, 1.f, 0.025f, 180, true, Color::BROWN);
+                cue.draw("basic.vert", "ball.frag", nullptr);
+                RECREATED_CUE = true;
+            }
+		}
 
         glClearColor(0.8f, 0.8f, 0.8f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
@@ -149,39 +205,48 @@ int main() {
         rightEdge.renderEdge();
 
         // Render the pothole
-        potHole1.render();
-        potHole2.render();
-        potHole3.render();
-        potHole4.render();
-        potHole5.render();
-        potHole6.render();
-
+        potHole1.render(dt);
+        potHole2.render(dt);
+        potHole3.render(dt);
+        potHole4.render(dt);
+        potHole5.render(dt);
+        potHole6.render(dt);
+                        
         // Render the cue ball
-        cueBall.render();
+        cueBall.render(dt);
 
         // Render the other balls
-        blackBall.render();
-        solidYellowBall.render();
-        stripedOrangeBall.render();
-        solidOrangeBall.render();
-        solidRedBall.render();
-        stripedBlueBall.render();
-        solidGreenBall.render();
-        solidBlueBall.render();
-        stripedBrownBall.render();
-        solidPurpleBall.render();
-        stripedYellowBall.render();
-        solidBrownBall.render();
-        stripedPurpleBall.render();
-        solidOrangeBall.render();
-        stripedRedBall.render();
-        stripedGreenBall.render();
+        blackBall.render(dt);
+        solidYellowBall.render(dt);
+        stripedOrangeBall.render(dt);
+        solidOrangeBall.render(dt);
+        solidRedBall.render(dt);
+        stripedBlueBall.render(dt);
+        solidGreenBall.render(dt);
+        solidBlueBall.render(dt);
+        stripedBrownBall.render(dt);
+        solidPurpleBall.render(dt);
+        stripedYellowBall.render(dt);
+        solidBrownBall.render(dt);
+        stripedPurpleBall.render(dt);
+        solidOrangeBall.render(dt);
+        stripedRedBall.render(dt);
+        stripedGreenBall.render(dt);
 
         // Render the cue
         cue.render();
 
         glfwSwapBuffers(window);
         glfwPollEvents();
+
+        // Frame end time and FPS cap
+        float frameEndTime = glfwGetTime();
+        float frameDuration = frameEndTime - frameStartTime;
+
+        if (frameDuration < TARGET_FRAME_TIME) {
+            float sleepTime = TARGET_FRAME_TIME - frameDuration;
+            std::this_thread::sleep_for(std::chrono::duration<float>(sleepTime));
+        }
     }
 
     glfwTerminate();

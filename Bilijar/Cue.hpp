@@ -17,6 +17,8 @@ public:
 	void draw(const char* vsSource, const char* fsSource, const char* texturePath);
 	void render();
 
+	void rotateCue(float xpos, float ypos);
+
 	static const float DEFAULT_WIDTH;
 	static const float DEFAULT_HEIGHT;
 	static float DEFAULT_COLOR[];

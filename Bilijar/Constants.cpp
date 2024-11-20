@@ -11,6 +11,9 @@ const int Constants::windowResizable = GL_FALSE;
 const int Constants::NUM_SEGMENTS = 30;
 const float Constants::PI = 3.14159265359f;
 
+const float Constants::BALL_SPEED = 1.f;
+const float Constants::FRICTION = 0.75f;
+
 int Constants::CalculateWindowPositionX() {
 	GLFWmonitor* primaryMonitor = glfwGetPrimaryMonitor();
 	if (!primaryMonitor) {

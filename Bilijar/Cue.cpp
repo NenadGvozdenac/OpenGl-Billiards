@@ -32,6 +32,10 @@ Cue::Cue(BilliardBall* cueBall, float width, float height, float angle, bool vis
 }
 
 void Cue::draw(const char* vsSource, const char* fsSource, const char* texturePath) {
+	if (!visible) {
+		return;
+	}
+
 	shaderProgram = Shader::createShader(vsSource, fsSource);
 
 	// Set up color uniform
@@ -115,6 +119,38 @@ void Cue::render() {
 
 	glBindVertexArray(0);
 	glUseProgram(0);
+}
+
+void Cue::rotateCue(float xpos, float ypos) {
+	if (!visible) {
+		return;
+	}
+
+	float windowWidth = Constants::windowWidth;
+	float windowHeight = Constants::windowHeight;
+
+	// Get the mouse position in normalized coordinates (0,0 to 1,1)
+	float normalizedX = xpos / windowWidth;
+	float normalizedY = ypos / windowHeight;
+
+	// Convert normalized coordinates to actual window coordinates in the range [-1, 1]
+	float normalizedXPos = (normalizedX * 2.0f) - 1.0f;  // Mapping to [-1, 1]
+	float normalizedYPos = 1.0f - (normalizedY * 2.0f);  // Mapping to [-1, 1]
+
+	// Translate normalized mouse position to actual coordinates in the window
+	// Adjust to make the cue rotate around the cue ball's position
+	float mouseX = normalizedXPos * windowWidth;
+	float mouseY = normalizedYPos * windowHeight;
+
+	// Now calculate the vector from the cue ball to the mouse cursor
+	float dx = mouseX - cueBall->x;
+	float dy = mouseY - cueBall->y;
+
+	// Calculate the angle from the cue ball to the mouse cursor in degrees
+	angle = atan2(dy, dx) * (180.0f / Constants::PI);
+
+	// Redraw the cue with the new angle
+	draw("basic.vert", "ball.frag", nullptr);
 }
 
 #endif

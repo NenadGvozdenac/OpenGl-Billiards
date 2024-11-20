@@ -25,7 +25,12 @@ public:
 	BilliardBall(float x, float y, float radius, float vx, float vy, float mass, BilliardBallType type, int number = 0);
 
 	void draw(const char* vsSource, const char* fsSource, const char* texturePath);
-	void render();
+	void render(float dt);
+	void updateBuffer();
+
+	const bool moving() const;
+
+	void hitBall(float angle, float dt);
 
 	bool checkCollision(BilliardBall* ball);
 	bool checkIfInHole(PotHole* hole);

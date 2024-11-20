@@ -26,6 +26,9 @@ public:
 	// Constants for the circles
 	static const int NUM_SEGMENTS;
 	static const float PI;
+
+	static const float BALL_SPEED;
+	static const float FRICTION;
 };
 
 // Shader class

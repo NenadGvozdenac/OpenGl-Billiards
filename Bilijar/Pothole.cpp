@@ -35,7 +35,7 @@ void PotHole::draw(const char* vsSource, const char* fsSource, const char* textu
     glBindVertexArray(0);
 }
 
-void PotHole::render() {
+void PotHole::render(float dt) {
     glUseProgram(shaderProgram);
     glBindVertexArray(VAO);
     glDrawArrays(GL_TRIANGLE_FAN, 0, sizeof(circle_buf) / (2 * sizeof(float)));

@@ -30,7 +30,7 @@ public:
     }
 
     virtual void draw(const char* vsSource, const char* fsSource, const char* texturePath) = 0;
-    virtual void render() = 0;
+    virtual void render(float dt) = 0;
 };
 
 #endif // !CIRCLE
