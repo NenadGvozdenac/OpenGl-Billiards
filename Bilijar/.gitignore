@@ -54,6 +54,3 @@ Thumbs.db
 *.tmp
 *.temp
 ~$*
-
-*.vcxproj
-packages/
