@@ -6,10 +6,16 @@
 BilliardBall::BilliardBall(float x, float y, float radius, Enums::BilliardBallType ballType, float color[], int number)
 	: Circle(x, y, radius), type(ballType), number(number), mass(1), vx(0), vy(0) {
 	this->color = Color(color);
+	this->potted = false;
+}
+
+BilliardBall::BilliardBall(const BilliardBall& ball) : Circle(ball.x, ball.y, ball.radius), type(ball.type), number(ball.number), mass(ball.mass), vx(ball.vx), vy(ball.vy) {
+	this->color = Color(ball.color.r, ball.color.g, ball.color.b);
+	this->potted = ball.potted;
 }
 
 BilliardBall::BilliardBall(float x, float y, float radius, float vx, float vy, float mass, Enums::BilliardBallType ballType, int number)
-	: Circle(x, y, radius), vx(vx), vy(vy), mass(mass), type(ballType), number(number) {}
+	: Circle(x, y, radius), vx(vx), vy(vy), mass(mass), type(ballType), number(number), potted(false) {}
 
 void BilliardBall::draw(const char* vsSource, const char* fsSource, const char* texturePath) {
 	shaderProgram = Shader::createShader(vsSource, fsSource);
@@ -61,6 +67,11 @@ void BilliardBall::draw(const char* vsSource, const char* fsSource, const char* 
 }
 
 void BilliardBall::render(float dt) {
+	// Check if the ball is potted
+	if (potted) {
+		return;
+	}
+
 	// Update position if the ball is moving
 	if (moving()) {
 		updatePosition(dt);
@@ -104,8 +115,51 @@ void BilliardBall::updateBuffer() {
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
-bool BilliardBall::checkCollision(BilliardBall* ball) {
-	return false;
+bool BilliardBall::checkCollision(BilliardBall* otherBall) {
+	// Calculate the distance between the centers of the two balls
+	float dx = otherBall->x - this->x;
+	float dy = otherBall->y - this->y;
+	float distance = sqrt(dx * dx + dy * dy);
+
+	// Check if the balls are overlapping
+	if (distance < this->radius + otherBall->radius) {
+		// Calculate the unit normal and tangent vectors
+		float nx = dx / distance;
+		float ny = dy / distance;
+		float tx = -ny;
+		float ty = nx;
+
+		// Project velocities onto the normal and tangent directions
+		float v1n = vx * nx + vy * ny; // Normal velocity of this ball
+		float v1t = vx * tx + vy * ty; // Tangential velocity of this ball
+		float v2n = otherBall->vx * nx + otherBall->vy * ny; // Normal velocity of other ball
+		float v2t = otherBall->vx * tx + otherBall->vy * ty; // Tangential velocity of other ball
+
+		// Tangential velocities remain unchanged after collision
+		float v1tFinal = v1t;
+		float v2tFinal = v2t;
+
+		// Compute the final normal velocities after collision using 1D elastic collision equations
+		float v1nFinal = (v1n * (mass - otherBall->mass) + 2 * otherBall->mass * v2n) / (mass + otherBall->mass);
+		float v2nFinal = (v2n * (otherBall->mass - mass) + 2 * mass * v1n) / (mass + otherBall->mass);
+
+		// Convert the scalar normal and tangential velocities back into vectors
+		vx = v1nFinal * nx + v1tFinal * tx;
+		vy = v1nFinal * ny + v1tFinal * ty;
+		otherBall->vx = v2nFinal * nx + v2tFinal * tx;
+		otherBall->vy = v2nFinal * ny + v2tFinal * ty;
+
+		// Resolve the overlap to prevent the balls from sticking
+		float overlap = 0.5f * (this->radius + otherBall->radius - distance);
+		this->x -= overlap * nx;
+		this->y -= overlap * ny;
+		otherBall->x += overlap * nx;
+		otherBall->y += overlap * ny;
+
+		return true; // Collision occurred
+	}
+
+	return false; // No collision
 }
 
 void calculateBallInHole(BilliardBall* ball) {
@@ -116,6 +170,8 @@ void calculateBallInHole(BilliardBall* ball) {
 			ball->vx = 0;
 			ball->vy = 0;
 			break;
+		default:
+			ball->potted = true;
 	}
 }
 
@@ -125,7 +181,7 @@ bool BilliardBall::checkIfInHole(PotHole* hole) {
 	float radius = hole->radius;
 
 	// Add a buffer to the hole radius
-	float hitboxBuffer = 0.02f; // Adjust this value to increase the hitbox size
+	float hitboxBuffer = 0.04f; // Adjust this value to increase the hitbox size
 	float effectiveRadius = radius + hitboxBuffer;
 
 	// Check if the ball is within the effective hitbox

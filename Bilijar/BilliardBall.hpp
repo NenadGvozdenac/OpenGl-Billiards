@@ -14,7 +14,10 @@ public:
 	Enums::BilliardBallType type;
 	Color color;
 	
+	bool potted;
+
 	BilliardBall(float x, float y, float radius, Enums::BilliardBallType type, float color[], int number = 0);
+	BilliardBall(const BilliardBall& ball);
 	BilliardBall(float x, float y, float radius, float vx, float vy, float mass, Enums::BilliardBallType type, int number = 0);
 
 	void draw(const char* vsSource, const char* fsSource, const char* texturePath);
