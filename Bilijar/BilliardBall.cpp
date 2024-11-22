@@ -3,12 +3,12 @@
 
 #include "BilliardBall.hpp"
 
-BilliardBall::BilliardBall(float x, float y, float radius, BilliardBallType ballType, float color[], int number)
+BilliardBall::BilliardBall(float x, float y, float radius, Enums::BilliardBallType ballType, float color[], int number)
 	: Circle(x, y, radius), type(ballType), number(number), mass(1), vx(0), vy(0) {
 	this->color = Color(color);
 }
 
-BilliardBall::BilliardBall(float x, float y, float radius, float vx, float vy, float mass, BilliardBallType ballType, int number)
+BilliardBall::BilliardBall(float x, float y, float radius, float vx, float vy, float mass, Enums::BilliardBallType ballType, int number)
 	: Circle(x, y, radius), vx(vx), vy(vy), mass(mass), type(ballType), number(number) {}
 
 void BilliardBall::draw(const char* vsSource, const char* fsSource, const char* texturePath) {
@@ -108,7 +108,33 @@ bool BilliardBall::checkCollision(BilliardBall* ball) {
 	return false;
 }
 
+void calculateBallInHole(BilliardBall* ball) {
+	switch (ball->type) {
+		case Enums::BilliardBallType::CUE:
+			ball->x = Constants::CUE_BALL_STARTING_POS_X;
+			ball->y = Constants::CUE_BALL_STARTING_POS_Y;
+			ball->vx = 0;
+			ball->vy = 0;
+			break;
+	}
+}
+
 bool BilliardBall::checkIfInHole(PotHole* hole) {
+	float x = hole->x;
+	float y = hole->y;
+	float radius = hole->radius;
+
+	// Add a buffer to the hole radius
+	float hitboxBuffer = 0.02f; // Adjust this value to increase the hitbox size
+	float effectiveRadius = radius + hitboxBuffer;
+
+	// Check if the ball is within the effective hitbox
+	if (sqrt(pow(this->x - x, 2) + pow(this->y - y, 2)) <= effectiveRadius) {
+		calculateBallInHole(this);
+		updateBuffer();
+		return true;
+	}
+
 	return false;
 }
 
@@ -184,6 +210,32 @@ void BilliardBall::hitBall(float angle, float speed) {
 	// Set velocity components based on angle and speed
 	vx = speed * cos(angleInRadians);
 	vy = speed * sin(angleInRadians);
+}
+
+void BilliardBall::reset() {
+	x = Constants::CUE_BALL_STARTING_POS_X;
+	y = Constants::CUE_BALL_STARTING_POS_Y;
+	vx = 0;
+	vy = 0;
+	updateBuffer();
+}
+
+void BilliardBall::move(Enums::MOVE_DIRECTION move_direction, float move_quantity) {
+	switch (move_direction) {
+	case Enums::MOVE_DIRECTION::UP:
+		y += move_quantity;
+		break;
+	case Enums::MOVE_DIRECTION::DOWN:
+		y -= move_quantity;
+		break;
+	case Enums::MOVE_DIRECTION::LEFT:
+		x -= move_quantity;
+		break;
+	case Enums::MOVE_DIRECTION::RIGHT:
+		x += move_quantity;
+		break;
+	}
+	updateBuffer();
 }
 
 #endif

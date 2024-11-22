@@ -5,30 +5,25 @@
 #include "Pothole.hpp"
 #include "TableEdge.hpp"
 
-enum BilliardBallType {
-	CUE,
-	STRIPE,
-	SOLID,
-	BLACK
-};
-
 class BilliardBall : public Circle {
 public:
 	float vx, vy;
 	float mass;
 
 	int number;
-	BilliardBallType type;
+	Enums::BilliardBallType type;
 	Color color;
 	
-	BilliardBall(float x, float y, float radius, BilliardBallType type, float color[], int number = 0);
-	BilliardBall(float x, float y, float radius, float vx, float vy, float mass, BilliardBallType type, int number = 0);
+	BilliardBall(float x, float y, float radius, Enums::BilliardBallType type, float color[], int number = 0);
+	BilliardBall(float x, float y, float radius, float vx, float vy, float mass, Enums::BilliardBallType type, int number = 0);
 
 	void draw(const char* vsSource, const char* fsSource, const char* texturePath);
 	void render(float dt);
 	void updateBuffer();
 
 	const bool moving() const;
+
+	void reset();
 
 	void hitBall(float angle, float dt);
 
@@ -40,6 +35,8 @@ public:
 	void applyFriction(float friction, float dt);
 
 	void updatePosition(float dt);
+
+	void move(Enums::MOVE_DIRECTION move_direction, float move_quantity);
 };
 
 #endif // BILLIARD_BALL_HPP

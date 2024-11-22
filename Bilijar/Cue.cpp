@@ -29,6 +29,7 @@ Cue::Cue(BilliardBall* cueBall, float width, float height, float angle, bool vis
 	this->angle = angle;
 	this->visible = visible;
 	this->color = Color(color);
+	this->hitSpeed = Constants::getSpeed(Enums::HIT_SPEED::MEDIUM);
 }
 
 void Cue::draw(const char* vsSource, const char* fsSource, const char* texturePath) {
@@ -58,22 +59,18 @@ void Cue::draw(const char* vsSource, const char* fsSource, const char* texturePa
 	float sinAngle = sin(radians);
 
 	float vertices[] = {
-		// Top-left
 		cueBall->x + (x1 - cueBall->x) * cosAngle - (y1 - cueBall->y) * sinAngle,
 		cueBall->y + (x1 - cueBall->x) * sinAngle + (y1 - cueBall->y) * cosAngle,
 		0.0f, 1.0f,
 
-		// Bottom-left
 		cueBall->x + (x3 - cueBall->x) * cosAngle - (y3 - cueBall->y) * sinAngle,
 		cueBall->y + (x3 - cueBall->x) * sinAngle + (y3 - cueBall->y) * cosAngle,
 		0.0f, 0.0f,
 
-		// Bottom-right
 		cueBall->x + (x4 - cueBall->x) * cosAngle - (y4 - cueBall->y) * sinAngle,
 		cueBall->y + (x4 - cueBall->x) * sinAngle + (y4 - cueBall->y) * cosAngle,
 		1.0f, 0.0f,
 
-		// Top-right
 		cueBall->x + (x2 - cueBall->x) * cosAngle - (y2 - cueBall->y) * sinAngle,
 		cueBall->y + (x2 - cueBall->x) * sinAngle + (y2 - cueBall->y) * cosAngle,
 		1.0f, 1.0f
@@ -151,6 +148,25 @@ void Cue::rotateCue(float xpos, float ypos) {
 
 	// Redraw the cue with the new angle
 	draw("basic.vert", "ball.frag", nullptr);
+}
+
+float calculateOffset(Enums::HIT_SPEED speed) {
+	switch (speed) {
+	case Enums::HIT_SPEED::VERY_SLOW:
+		return 0.3f;
+	case Enums::HIT_SPEED::SLOW:
+		return 0.4f;
+	case Enums::HIT_SPEED::MEDIUM:
+		return 0.5f;
+	case Enums::HIT_SPEED::FAST:
+		return 0.6f;
+	case Enums::HIT_SPEED::VERY_FAST:
+		return 0.7f;
+	}
+}
+
+void Cue::switchCueSpeed(Enums::HIT_SPEED speed) {
+	hitSpeed = Constants::getSpeed(speed);
 }
 
 #endif
