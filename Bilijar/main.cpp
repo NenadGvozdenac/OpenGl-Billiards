@@ -60,23 +60,28 @@ int main() {
 	BilliardTable table;
 	table.drawTable("basic.vert", "basic.frag", "strides/billiard_table.png");
 
-	TableEdge leftUpperEdge(-0.645f, 0.365f, -0.67f, 0.395f, -0.0325f, 0.395f, -0.0325f, 0.365f, TableEdgeType::TOP, DISPLAY_EDGES);
+	// Top Edges with smaller height (height ~ 0.01)
+	TableEdge leftUpperEdge(-0.645f, 0.375f, -0.67f, 0.385f, -0.0325f, 0.385f, -0.0325f, 0.375f, TableEdgeType::TOP, DISPLAY_EDGES);
 	leftUpperEdge.drawEdge("basic.vert", "edgefrag.frag");
 
-	TableEdge rightUpperEdge(0.0465f, 0.365f, 0.0465f, 0.395f, 0.685f, 0.395f, 0.655f, 0.365f, TableEdgeType::TOP, DISPLAY_EDGES);
+	TableEdge rightUpperEdge(0.0465f, 0.375f, 0.0465f, 0.385f, 0.685f, 0.385f, 0.655f, 0.375f, TableEdgeType::TOP, DISPLAY_EDGES);
 	rightUpperEdge.drawEdge("basic.vert", "edgefrag.frag");
 
-	TableEdge leftLowerEdge(-0.645f, -0.355f, -0.67f, -0.385f, -0.0325f, -0.385f, -0.0325f, -0.355f, TableEdgeType::BOTTOM, DISPLAY_EDGES);
+	// Bottom Edges with smaller height (height ~ 0.01)
+	TableEdge leftLowerEdge(-0.645f, -0.375f, -0.67f, -0.385f, -0.0325f, -0.385f, -0.0325f, -0.375f, TableEdgeType::BOTTOM, DISPLAY_EDGES);
 	leftLowerEdge.drawEdge("basic.vert", "edgefrag.frag");
 
-	TableEdge rightLowerEdge(0.0465f, -0.355f, 0.0465f, -0.385f, 0.685f, -0.385f, 0.655f, -0.355f, TableEdgeType::BOTTOM, DISPLAY_EDGES);
+	TableEdge rightLowerEdge(0.0465f, -0.375f, 0.0465f, -0.385f, 0.685f, -0.385f, 0.655f, -0.375f, TableEdgeType::BOTTOM, DISPLAY_EDGES);
 	rightLowerEdge.drawEdge("basic.vert", "edgefrag.frag");
 
-	TableEdge leftEdge(-0.725f, -0.343f, -0.725f, 0.35f, -0.695f, 0.32f, -0.695f, -0.308f, TableEdgeType::LEFT, DISPLAY_EDGES);
+	// Left Edges with smaller width (width ~ 0.01)
+	TableEdge leftEdge(-0.715f, -0.343f, -0.715f, 0.35f, -0.705f, 0.34f, -0.705f, -0.333f, TableEdgeType::LEFT, DISPLAY_EDGES);
 	leftEdge.drawEdge("basic.vert", "edgefrag.frag");
 
-	TableEdge rightEdge(0.733f, -0.343f, 0.733f, 0.35f, 0.703f, 0.32f, 0.703f, -0.308f, TableEdgeType::RIGHT, DISPLAY_EDGES);
+	// Right Edges with smaller width (width ~ 0.01)
+	TableEdge rightEdge(0.723f, -0.343f, 0.723f, 0.35f, 0.713f, 0.34f, 0.713f, -0.333f, TableEdgeType::RIGHT, DISPLAY_EDGES);
 	rightEdge.drawEdge("basic.vert", "edgefrag.frag");
+
 
 	PotHole potHole1(0.725f, 0.39f, 0.04f);
 	potHole1.draw("basic.vert", "circle.frag", nullptr);
