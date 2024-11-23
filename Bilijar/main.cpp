@@ -18,6 +18,10 @@ const float TARGET_FRAME_TIME = 1.0f / TARGET_FPS;
 bool GAME_STARTED = false;
 const float TEST_MOVE_SPEED = 0.03f;
 
+bool FIRST_BALL_HIT = false;
+
+bool GAME_OVER = false;
+
 static bool resetCue(BilliardBall& cueBall, Cue& cue) {
 	cue = Cue(&cueBall, 1.f, 0.025f, 180, true, Color::BROWN);
 	cue.draw("basic.vert", "ball.frag", nullptr);
@@ -29,10 +33,24 @@ static void moveCueBall(Cue& cue, BilliardBall& cueBall, Enums::MOVE_DIRECTION m
 	resetCue(cueBall, cue);
 }
 
+static void resetAllBalls(vector<BilliardBall>& balls);
+
 static void checkCollisionsWithBalls(BilliardBall& ball, std::vector<BilliardBall>& balls) {
 	for (BilliardBall& otherBall : balls) {
-		if (ball.number != otherBall.number)
-			ball.checkCollision(&otherBall);
+		if (ball.number != otherBall.number) {
+			if (ball.checkCollision(&otherBall)) {
+				// If the cue ball hits another ball, it's not a foul
+				if (ball.type == Enums::BilliardBallType::CUE && !FIRST_BALL_HIT) {
+					FIRST_BALL_HIT = true;
+
+					if (ball.number == 0 && otherBall.number == 8) {
+						cout << "Foul!" << endl;
+						ball.reset();
+						resetAllBalls(balls);
+					}
+				}
+			}
+		}
 	}
 }
 
@@ -96,9 +114,61 @@ static void renderBalls(std::vector<BilliardBall>& balls, float dt) {
 	}
 }
 
-static void resetAllBalls(vector<BilliardBall>& balls) {
-	// Reset all balls
+static BilliardBall findBlackBall(std::vector<BilliardBall>& balls) {
+	for (BilliardBall& ball : balls) {
+		if (ball.type == Enums::BilliardBallType::BLACK) {
+			return ball;
+		}
+	}
+}
 
+static bool checkIfFoul(std::vector<BilliardBall>& balls) {
+	BilliardBall cueBall = balls[0];
+	BilliardBall blackBall = findBlackBall(balls);
+
+	if (cueBall.checkCollision(&blackBall)) {
+		// If its the first ball hit, its a foul
+		if (!FIRST_BALL_HIT) {
+			return true;
+		}
+	}
+
+	if (cueBall.potted) {
+		return true;
+	}
+
+	return false;
+}
+
+static bool checkIfGameOver(std::vector<BilliardBall>& balls) {
+	int solids = 0;
+	int stripes = 0;
+
+	BilliardBall blackBall = findBlackBall(balls);
+
+	if (blackBall.potted) {
+		return true;
+	}
+
+	for (BilliardBall& ball : balls) {
+		if (ball.type == Enums::BilliardBallType::SOLID && ball.potted) {
+			solids++;
+		}
+		else if (ball.type == Enums::BilliardBallType::STRIPE && ball.potted) {
+			stripes++;
+		}
+	}
+
+	std::cout << "Solids potted: " << solids << " Stripes potted: " << stripes << std::endl;
+
+	if (solids == 7 || stripes == 7) {
+		return true;
+	}
+
+	return false;
+}
+
+static void resetAllBalls(vector<BilliardBall>& balls) {
 	balls = {
 		BilliardBall(Constants::CUE_BALL_STARTING_POS_X, Constants::CUE_BALL_STARTING_POS_Y, 0.03f, Enums::BilliardBallType::CUE, Color::WHITE, 0), // Cue ball
 		BilliardBall(0.32f, 0.0f, 0.03f, Enums::BilliardBallType::SOLID, Color::YELLOW, 1),    // Solid yellow
@@ -202,7 +272,7 @@ int main() {
 
 	bool RECREATED_CUE = false;
 
-	while (!glfwWindowShouldClose(window)) {
+	while (!glfwWindowShouldClose(window) && !GAME_OVER) {
 		float frameStartTime = glfwGetTime();
 
 		if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
@@ -227,6 +297,12 @@ int main() {
 			cueBall.hitBall(angle, cue.hitSpeed);
 			GAME_STARTED = true;
 			RECREATED_CUE = false;
+			FIRST_BALL_HIT = false;
+		}
+
+		if (checkIfGameOver(billiardBalls)) {
+			GAME_OVER = true;
+			cout << "Game over!" << endl;
 		}
 
 		// On press q, reset the cue ball
@@ -275,6 +351,13 @@ int main() {
 
 		if (cueBall.moving()) {
 			cue.visible = false;
+
+			if (checkIfFoul(billiardBalls)) {
+				cout << "Foul!" << endl;
+				cueBall.reset();
+				resetCue(cueBall, cue);
+				resetAllBalls(billiardBalls);
+			}
 		}
 		else if (GAME_STARTED) {
 			cue.visible = true;
