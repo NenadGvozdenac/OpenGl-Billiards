@@ -9,6 +9,7 @@
 #include "TableEdge.hpp"
 #include "BilliardBall.hpp"
 #include "Cue.hpp"
+#include "Character.hpp"
 
 using namespace std;
 
@@ -159,8 +160,6 @@ static bool checkIfGameOver(std::vector<BilliardBall>& balls) {
 		}
 	}
 
-	std::cout << "Solids potted: " << solids << " Stripes potted: " << stripes << std::endl;
-
 	if (solids == 7 || stripes == 7) {
 		return true;
 	}
@@ -189,6 +188,39 @@ static void resetAllBalls(vector<BilliardBall>& balls) {
 	};
 
 	drawBalls(balls);
+}
+
+static std::vector<Character> createCharacters(const std::string text, float startX, float startY, float charWidth, float charHeight) {
+	std::vector<Character> characters;
+
+	for (char c : text) {
+		Character character(startX, startY, charWidth, charHeight);
+		std::string path = "characters/" + std::string(1, c) + ".png";
+		const char* path1 = path.c_str();
+		character.drawCharacter("basic.vert", "basic.frag", path1);
+		characters.push_back(character);
+		startX += charWidth;  // Move to the right for the next character
+	}
+
+	return characters;
+}
+
+static std::vector<Character> drawIndex(float startX, float startY, float charWidth, float charHeight) {
+	std::string index = "RA133-2021";
+	std::vector<Character> characters = createCharacters(index, startX, startY, charWidth, charHeight);
+	return characters;
+}
+
+static std::vector<Character> drawName(float startX, float startY, float charWidth, float charHeight) {
+	std::string nameAndLastName = "Nenad";
+	std::vector<Character> characters = createCharacters(nameAndLastName, startX, startY, charWidth, charHeight);
+	return characters;
+}
+
+static std::vector<Character> drawLastName(float startX, float startY, float charWidth, float charHeight) {
+	std::string nameAndLastName = "Gvozdenac";
+	std::vector<Character> characters = createCharacters(nameAndLastName, startX, startY, charWidth, charHeight);
+	return characters;
 }
 
 int main() {
@@ -271,6 +303,10 @@ int main() {
 	float dt = 0.0f;  // Delta time
 
 	bool RECREATED_CUE = false;
+
+	std::vector<Character> characters = drawIndex(0.5f, 0.91f, 0.03f, 0.05f);
+	std::vector<Character> nameAndLastName = drawName(0.5f, 0.85f, 0.03f, 0.05f);
+	std::vector<Character> lastName = drawLastName(0.67f, 0.85f, 0.03f, 0.05f);
 
 	while (!glfwWindowShouldClose(window) && !GAME_OVER) {
 		float frameStartTime = glfwGetTime();
@@ -399,6 +435,21 @@ int main() {
 
 		// Render the cue
 		cue.render();
+
+		// Render the index
+		for (Character& character : characters) {
+			character.renderCharacter();
+		}
+
+		// Render the name
+		for (Character& character : nameAndLastName) {
+			character.renderCharacter();
+		}
+
+		// Render the last name
+		for (Character& character : lastName) {
+			character.renderCharacter();
+		}
 
 		glfwSwapBuffers(window);
 		glfwPollEvents();

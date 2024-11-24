@@ -149,6 +149,7 @@
   <ItemGroup>
     <ClInclude Include="BilliardBall.hpp" />
     <ClInclude Include="BilliardTable.hpp" />
+    <ClInclude Include="Character.hpp" />
     <ClInclude Include="Circle.hpp" />
     <ClInclude Include="Constants.hpp" />
     <ClInclude Include="Cue.hpp" />
