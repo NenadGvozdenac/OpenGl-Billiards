@@ -35,7 +35,9 @@ static void moveCueBall(Cue& cue, BilliardBall& cueBall, Enums::MOVE_DIRECTION m
 static void resetAllBalls(vector<BilliardBall>& balls);
 
 static void checkCollisionsWithBalls(BilliardBall& ball, std::vector<BilliardBall>& balls) {
+	if (ball.potted) return;
 	for (BilliardBall& otherBall : balls) {
+		if (otherBall.potted) continue;
 		if (ball.number != otherBall.number) {
 			if (ball.checkCollision(&otherBall)) {
 				// If the cue ball hits another ball, it's not a foul
@@ -194,10 +196,10 @@ static void resetAllBalls(vector<BilliardBall>& balls) {
 		BilliardBall(0.37f, 0.03f, 0.03f, Enums::BilliardBallType::SOLID, Color::BLUE, 2),     // Solid blue
 		BilliardBall(0.37f, -0.03f, 0.03f, Enums::BilliardBallType::SOLID, Color::RED, 3),     // Solid red
 		BilliardBall(0.42f, 0.06f, 0.03f, Enums::BilliardBallType::SOLID, Color::PURPLE, 4),   // Solid purple
-		BilliardBall(0.42f, 0.0f, 0.03f, Enums::BilliardBallType::SOLID, Color::ORANGE, 5),    // Solid orange
+		BilliardBall(0.42f, 0.0f, 0.03f, Enums::BilliardBallType::BLACK, Color::BLACK, 8),    // Solid orange
 		BilliardBall(0.42f, -0.06f, 0.03f, Enums::BilliardBallType::SOLID, Color::GREEN, 6),   // Solid green
 		BilliardBall(0.47f, 0.09f, 0.03f, Enums::BilliardBallType::SOLID, Color::BROWN, 7),    // Solid brown
-		BilliardBall(0.47f, 0.03f, 0.03f, Enums::BilliardBallType::BLACK, Color::BLACK, 8),    // Black ball
+		BilliardBall(0.47f, 0.03f, 0.03f, Enums::BilliardBallType::SOLID, Color::ORANGE, 5),    // Black ball
 		BilliardBall(0.47f, -0.03f, 0.03f, Enums::BilliardBallType::STRIPE, Color::YELLOW, 9), // Striped yellow
 		BilliardBall(0.47f, -0.09f, 0.03f, Enums::BilliardBallType::STRIPE, Color::BLUE, 10),  // Striped blue
 		BilliardBall(0.52f, 0.12f, 0.03f, Enums::BilliardBallType::STRIPE, Color::RED, 11),    // Striped red
@@ -339,10 +341,10 @@ int main() {
 		BilliardBall(0.37f, 0.03f, 0.03f, Enums::BilliardBallType::SOLID, Color::BLUE, 2),     // Solid blue
 		BilliardBall(0.37f, -0.03f, 0.03f, Enums::BilliardBallType::SOLID, Color::RED, 3),     // Solid red
 		BilliardBall(0.42f, 0.06f, 0.03f, Enums::BilliardBallType::SOLID, Color::PURPLE, 4),   // Solid purple
-		BilliardBall(0.42f, 0.0f, 0.03f, Enums::BilliardBallType::SOLID, Color::ORANGE, 5),    // Solid orange
+		BilliardBall(0.42f, 0.0f, 0.03f, Enums::BilliardBallType::BLACK, Color::BLACK, 8),    // Solid orange
 		BilliardBall(0.42f, -0.06f, 0.03f, Enums::BilliardBallType::SOLID, Color::GREEN, 6),   // Solid green
 		BilliardBall(0.47f, 0.09f, 0.03f, Enums::BilliardBallType::SOLID, Color::BROWN, 7),    // Solid brown
-		BilliardBall(0.47f, 0.03f, 0.03f, Enums::BilliardBallType::BLACK, Color::BLACK, 8),    // Black ball
+		BilliardBall(0.47f, 0.03f, 0.03f, Enums::BilliardBallType::SOLID, Color::ORANGE, 5),    // Black ball
 		BilliardBall(0.47f, -0.03f, 0.03f, Enums::BilliardBallType::STRIPE, Color::YELLOW, 9), // Striped yellow
 		BilliardBall(0.47f, -0.09f, 0.03f, Enums::BilliardBallType::STRIPE, Color::BLUE, 10),  // Striped blue
 		BilliardBall(0.52f, 0.12f, 0.03f, Enums::BilliardBallType::STRIPE, Color::RED, 11),    // Striped red
