@@ -11,8 +11,6 @@
 #include "Cue.hpp"
 #include "Character.hpp"
 
-using namespace std;
-
 const bool DISPLAY_EDGES = false;
 const float TARGET_FPS = 144.0f;
 const float TARGET_FRAME_TIME = 1.0f / TARGET_FPS;
@@ -121,6 +119,28 @@ static BilliardBall findBlackBall(std::vector<BilliardBall>& balls) {
 			return ball;
 		}
 	}
+}
+
+static bool isTurnOver(std::vector<BilliardBall>& balls) {
+	bool isTurnOver = false;
+
+	std::vector<std::pair<BilliardBall, bool>> movingBalls;
+
+	for (BilliardBall& ball : balls) {
+		movingBalls.push_back(std::make_pair(ball, ball.moving()));
+	}
+
+	for (std::pair<BilliardBall, bool> movingBall : movingBalls) {
+		if (movingBall.second) {
+			isTurnOver = false;
+			break;
+		}
+		else {
+			isTurnOver = true;
+		}
+	}
+
+	return isTurnOver;
 }
 
 static bool checkIfFoul(std::vector<BilliardBall>& balls) {
@@ -253,7 +273,7 @@ int main() {
 	// Create and configure the billiard table
 	BilliardTable table;
 
-	vector<TableEdge> edges = {
+	std::vector<TableEdge> edges = {
 		TableEdge(-0.645f, 0.375f, -0.67f, 0.385f, -0.0325f, 0.385f, -0.0325f, 0.375f, TableEdgeType::TOP, DISPLAY_EDGES),
 		TableEdge(0.0465f, 0.375f, 0.0465f, 0.385f, 0.685f, 0.385f, 0.655f, 0.375f, TableEdgeType::TOP, DISPLAY_EDGES),
 		TableEdge(-0.645f, -0.375f, -0.67f, -0.385f, -0.0325f, -0.385f, -0.0325f, -0.375f, TableEdgeType::BOTTOM, DISPLAY_EDGES),
@@ -262,7 +282,7 @@ int main() {
 		TableEdge(0.723f, -0.343f, 0.723f, 0.35f, 0.713f, 0.34f, 0.713f, -0.333f, TableEdgeType::RIGHT, DISPLAY_EDGES)
 	};
 
-	vector<PotHole> potholes = {
+	std::vector<PotHole> potholes = {
 		PotHole(0.725f, 0.39f, 0.04f),
 		PotHole(-0.713f, 0.39f, 0.04f),
 		PotHole(0.725f, -0.376f, 0.04f),
@@ -271,7 +291,7 @@ int main() {
 		PotHole(0.005f, -0.405f, 0.04f)
 	};
 
-	vector<BilliardBall> billiardBalls = {
+	std::vector<BilliardBall> billiardBalls = {
 		BilliardBall(Constants::CUE_BALL_STARTING_POS_X, Constants::CUE_BALL_STARTING_POS_Y, 0.03f, Enums::BilliardBallType::CUE, Color::WHITE, 0), // Cue ball
 		BilliardBall(0.32f, 0.0f, 0.03f, Enums::BilliardBallType::SOLID, Color::YELLOW, 1),    // Solid yellow
 		BilliardBall(0.37f, 0.03f, 0.03f, Enums::BilliardBallType::SOLID, Color::BLUE, 2),     // Solid blue
@@ -334,6 +354,7 @@ int main() {
 			GAME_STARTED = true;
 			RECREATED_CUE = false;
 			FIRST_BALL_HIT = false;
+			cue.visible = false;
 		}
 
 		if (checkIfGameOver(billiardBalls)) {
@@ -385,21 +406,16 @@ int main() {
 			cue.switchCueSpeed(Enums::HIT_SPEED::VERY_FAST);
 		}
 
-		if (cueBall.moving()) {
-			cue.visible = false;
-
+		if (isTurnOver(billiardBalls) && GAME_STARTED) {
 			if (checkIfFoul(billiardBalls)) {
 				cout << "Foul!" << endl;
 				cueBall.reset();
-				resetCue(cueBall, cue);
 				resetAllBalls(billiardBalls);
 			}
-		}
-		else if (GAME_STARTED) {
-			cue.visible = true;
 
 			if (!RECREATED_CUE) {
-				RECREATED_CUE = resetCue(cueBall, cue);
+				resetCue(cueBall, cue);
+				RECREATED_CUE = true;
 			}
 		}
 
@@ -419,7 +435,7 @@ int main() {
 		renderBalls(billiardBalls, dt);
 
 		// Check all collision with balls
-		for (BilliardBall ball : billiardBalls) {
+		for (BilliardBall& ball : billiardBalls) {
 			checkCollisionsWithBalls(ball, billiardBalls);
 		}
 

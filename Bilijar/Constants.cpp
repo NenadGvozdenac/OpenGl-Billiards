@@ -130,11 +130,11 @@ float Color::PINK[] = { 1.0f, 0.0f, 1.0f };
 float Color::BROWN[] = { 0.647f, 0.165f, 0.165f };
 
 const std::unordered_map<Enums::HIT_SPEED, float> Constants::hitSpeedMap = {
-	{Enums::HIT_SPEED::VERY_SLOW, 0.5f},
-	{Enums::HIT_SPEED::SLOW, 0.75f},
-	{Enums::HIT_SPEED::MEDIUM, 1.f},
-	{Enums::HIT_SPEED::FAST, 1.54f},
-	{Enums::HIT_SPEED::VERY_FAST, 2.5f}
+	{Enums::HIT_SPEED::VERY_SLOW, 0.75f},
+	{Enums::HIT_SPEED::SLOW, 1.f},
+	{Enums::HIT_SPEED::MEDIUM, 1.5f},
+	{Enums::HIT_SPEED::FAST, 2.f},
+	{Enums::HIT_SPEED::VERY_FAST, 3.5f}
 };
 
 float Constants::getSpeed(Enums::HIT_SPEED hitSpeed) {

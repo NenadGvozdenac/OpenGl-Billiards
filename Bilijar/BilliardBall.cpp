@@ -69,6 +69,8 @@ void BilliardBall::draw(const char* vsSource, const char* fsSource, const char* 
 void BilliardBall::render(float dt) {
 	// Check if the ball is potted
 	if (potted) {
+		vx = 0;
+		vy = 0;
 		return;
 	}
 
