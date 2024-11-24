@@ -215,7 +215,39 @@ static std::vector<Character> createCharacters(const std::string text, float sta
 
 	for (char c : text) {
 		Character character(startX, startY, charWidth, charHeight);
-		std::string path = "characters/" + std::string(1, c) + ".png";
+		std::string finalPath;
+
+		// If the character is a space, use the space character
+		if (c == ' ') {
+			finalPath = "space";
+		}
+
+		// If the character is a number, use the number character
+		if (std::isdigit(c)) {
+			finalPath = std::to_string(c - '0');
+		}
+		
+		// If the character is a :, use doublecolon.png
+		if (c == ':') {
+			finalPath = "doublecolon";
+		}
+
+		// If the character is a /, use slash.png
+		if (c == '/') {
+			finalPath = "slash";
+		}
+
+		// If uppercase, add C_uppercase. If lowercase, add C_lowercase
+		if (std::isalpha(c)) {
+			if (std::isupper(c)) {
+				finalPath = std::string(1, c) + "_uppercase";
+			}
+			else {
+				finalPath = std::string(1, std::toupper(c)) + "_lowercase";
+			}
+		}
+
+		std::string path = "characters/" + finalPath + ".png";
 		const char* path1 = path.c_str();
 		character.drawCharacter("basic.vert", "basic.frag", path1);
 		characters.push_back(character);
@@ -225,22 +257,32 @@ static std::vector<Character> createCharacters(const std::string text, float sta
 	return characters;
 }
 
-static std::vector<Character> drawIndex(float startX, float startY, float charWidth, float charHeight) {
-	std::string index = "RA133-2021";
-	std::vector<Character> characters = createCharacters(index, startX, startY, charWidth, charHeight);
-	return characters;
+static std::vector<Character> drawText(std::string text, float startX, float startY, float charWidth, float charHeight) {
+	return createCharacters(text, startX, startY, charWidth, charHeight);
 }
 
-static std::vector<Character> drawName(float startX, float startY, float charWidth, float charHeight) {
-	std::string nameAndLastName = "Nenad";
-	std::vector<Character> characters = createCharacters(nameAndLastName, startX, startY, charWidth, charHeight);
-	return characters;
+static void setCueSpeed(std::vector<Character>& cueSpeed, Enums::HIT_SPEED hitSpeed) {
+	switch (hitSpeed) {
+	case Enums::HIT_SPEED::VERY_SLOW:
+		cueSpeed = drawText("Cue speed: 1", -0.9f, 0.91f, 0.03f, 0.05f);
+		break;
+	case Enums::HIT_SPEED::SLOW:
+		cueSpeed = drawText("Cue speed: 2", -0.9f, 0.91f, 0.03f, 0.05f);
+		break;
+	case Enums::HIT_SPEED::MEDIUM:
+		cueSpeed = drawText("Cue speed: 3", -0.9f, 0.91f, 0.03f, 0.05f);
+		break;
+	case Enums::HIT_SPEED::FAST:
+		cueSpeed = drawText("Cue speed: 4", -0.9f, 0.91f, 0.03f, 0.05f);
+		break;
+	case Enums::HIT_SPEED::VERY_FAST:
+		cueSpeed = drawText("Cue speed: 5", -0.9f, 0.91f, 0.03f, 0.05f);
+		break;
+	}
 }
 
-static std::vector<Character> drawLastName(float startX, float startY, float charWidth, float charHeight) {
-	std::string nameAndLastName = "Gvozdenac";
-	std::vector<Character> characters = createCharacters(nameAndLastName, startX, startY, charWidth, charHeight);
-	return characters;
+static void hideCueSpeed(std::vector<Character>& cueSpeed) {
+	cueSpeed = drawText("", -0.9f, 0.91f, 0.03f, 0.05f);
 }
 
 int main() {
@@ -324,9 +366,9 @@ int main() {
 
 	bool RECREATED_CUE = false;
 
-	std::vector<Character> characters = drawIndex(0.5f, 0.91f, 0.03f, 0.05f);
-	std::vector<Character> nameAndLastName = drawName(0.5f, 0.85f, 0.03f, 0.05f);
-	std::vector<Character> lastName = drawLastName(0.67f, 0.85f, 0.03f, 0.05f);
+	std::vector<Character> characters = drawText("RA133/2021", 0.5f, 0.91f, 0.03f, 0.05f);
+	std::vector<Character> nameAndLastName = drawText("Nenad Gvozdenac", 0.5f, 0.85f, 0.03f, 0.05f);
+	std::vector<Character> cueSpeed = drawText("Cue speed: 3", -0.9f, 0.91f, 0.03f, 0.05f);
 
 	while (!glfwWindowShouldClose(window) && !GAME_OVER) {
 		float frameStartTime = glfwGetTime();
@@ -348,6 +390,7 @@ int main() {
 			cue.rotateCue(xpos, ypos);
 		}
 
+		// Right click
 		if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS && !cueBall.moving()) {
 			float angle = cue.angle;
 			cueBall.hitBall(angle, cue.hitSpeed);
@@ -355,6 +398,7 @@ int main() {
 			RECREATED_CUE = false;
 			FIRST_BALL_HIT = false;
 			cue.visible = false;
+			hideCueSpeed(cueSpeed);
 		}
 
 		if (checkIfGameOver(billiardBalls)) {
@@ -367,54 +411,58 @@ int main() {
 			cueBall.reset();
 			resetCue(cueBall, cue);
 			resetAllBalls(billiardBalls);
+			GAME_STARTED = false;
+			setCueSpeed(cueSpeed, Enums::HIT_SPEED::MEDIUM);
 		}
 
-		// TODO: For testing purposes only. Remove this later
-		// On press w, move the cue ball up
-		if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-			moveCueBall(cue, cueBall, Enums::MOVE_DIRECTION::UP, TEST_MOVE_SPEED);
+		// Before game started, cue ball can be moved from y -0.3 to 0.3 
+		if (!GAME_STARTED) {
+			if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS && cue.y1 <= 0.300f)
+				moveCueBall(cue, cueBall, Enums::MOVE_DIRECTION::UP, TEST_MOVE_SPEED);
 
-		// TODO: For testing purposes only. Remove this later
-		// On press s, move the cue ball down
-		if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-			moveCueBall(cue, cueBall, Enums::MOVE_DIRECTION::DOWN, TEST_MOVE_SPEED);
+			if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS && cue.y2 >= -0.312f)
+				moveCueBall(cue, cueBall, Enums::MOVE_DIRECTION::DOWN, TEST_MOVE_SPEED);
 
-		// TODO: For testing purposes only. Remove this later
-		// On press a, move the cue ball left
-		if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-			moveCueBall(cue, cueBall, Enums::MOVE_DIRECTION::LEFT, TEST_MOVE_SPEED);
+			if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS && cue.x1 >= -0.57f)
+				moveCueBall(cue, cueBall, Enums::MOVE_DIRECTION::LEFT, TEST_MOVE_SPEED);
 
-		// TODO: For testing purposes only. Remove this later
-		// On press d, move the cue ball right
-		if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-			moveCueBall(cue, cueBall, Enums::MOVE_DIRECTION::RIGHT, TEST_MOVE_SPEED);
+			if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS && cue.x3 <= -0.345f)
+				moveCueBall(cue, cueBall, Enums::MOVE_DIRECTION::RIGHT, TEST_MOVE_SPEED);
+		}
 
 		// 1 - Very slow speed; 2 - Slow speed; 3 - Normal speed; 4 - Fast speed; 5 - Very fast speed
 		if (glfwGetKey(window, GLFW_KEY_1) == GLFW_PRESS) {
+			setCueSpeed(cueSpeed, Enums::HIT_SPEED::VERY_SLOW);
 			cue.switchCueSpeed(Enums::HIT_SPEED::VERY_SLOW);
 		}
 		else if (glfwGetKey(window, GLFW_KEY_2) == GLFW_PRESS) {
+			setCueSpeed(cueSpeed, Enums::HIT_SPEED::SLOW);
 			cue.switchCueSpeed(Enums::HIT_SPEED::SLOW);
 		}
 		else if (glfwGetKey(window, GLFW_KEY_3) == GLFW_PRESS) {
+			setCueSpeed(cueSpeed, Enums::HIT_SPEED::MEDIUM);
 			cue.switchCueSpeed(Enums::HIT_SPEED::MEDIUM);
 		}
 		else if (glfwGetKey(window, GLFW_KEY_4) == GLFW_PRESS) {
+			setCueSpeed(cueSpeed, Enums::HIT_SPEED::FAST);
 			cue.switchCueSpeed(Enums::HIT_SPEED::FAST);
 		}
 		else if (glfwGetKey(window, GLFW_KEY_5) == GLFW_PRESS) {
+			setCueSpeed(cueSpeed, Enums::HIT_SPEED::VERY_FAST);
 			cue.switchCueSpeed(Enums::HIT_SPEED::VERY_FAST);
 		}
 
-		if (isTurnOver(billiardBalls) && GAME_STARTED) {
-			if (checkIfFoul(billiardBalls)) {
-				cout << "Foul!" << endl;
-				cueBall.reset();
-				resetAllBalls(billiardBalls);
-			}
+		// Check if the cue ball is potted or black ball was first hit
+		if (checkIfFoul(billiardBalls)) {
+			cout << "Foul!" << endl;
+			cueBall.reset();
+			resetAllBalls(billiardBalls);
+		}
 
+		if (isTurnOver(billiardBalls) && GAME_STARTED) {
 			if (!RECREATED_CUE) {
 				resetCue(cueBall, cue);
+				setCueSpeed(cueSpeed, Enums::HIT_SPEED::MEDIUM);
 				RECREATED_CUE = true;
 			}
 		}
@@ -444,7 +492,7 @@ int main() {
 			checkCollisionsWithEdges(ball, edges);
 		}
 
-		//// Check all collision with holes
+		// Check all collision with holes
 		for (BilliardBall& ball : billiardBalls) {
 			checkCollisionsWithHoles(ball, potholes);
 		}
@@ -462,8 +510,8 @@ int main() {
 			character.renderCharacter();
 		}
 
-		// Render the last name
-		for (Character& character : lastName) {
+		// Render the cue speed
+		for (Character& character : cueSpeed) {
 			character.renderCharacter();
 		}
 
