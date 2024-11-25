@@ -14,7 +14,8 @@ public:
 	Character(float x, float y, float width, float height) : x(x), y(y), width(width), height(height) {}
 	
     void drawCharacter(const char* vsSource, const char* fsSource, const char* texturePath) {
-        shaderProgram = Shader::createShader(vsSource, fsSource);
+		if (shaderProgram == 0)
+            shaderProgram = Shader::createShader(vsSource, fsSource);
 
         float vertices[] = {
             // positions        // texture coords

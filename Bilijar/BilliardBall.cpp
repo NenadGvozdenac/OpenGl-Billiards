@@ -18,7 +18,8 @@ BilliardBall::BilliardBall(float x, float y, float radius, float vx, float vy, f
 	: Circle(x, y, radius), vx(vx), vy(vy), mass(mass), type(ballType), number(number), potted(false) {}
 
 void BilliardBall::draw(const char* vsSource, const char* fsSource, const char* texturePath) {
-	shaderProgram = Shader::createShader(vsSource, fsSource);
+	if(shaderProgram == 0)
+		shaderProgram = Shader::createShader(vsSource, fsSource);
 
 	// Set up color uniform
 	GLint colorUniformLocation = glGetUniformLocation(shaderProgram, "ballColor");

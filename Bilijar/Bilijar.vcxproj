@@ -130,6 +130,7 @@
   <ItemGroup>
     <ClCompile Include="BilliardBall.cpp" />
     <ClCompile Include="BilliardTable.cpp" />
+    <ClCompile Include="ColoredRectangle.cpp" />
     <ClCompile Include="Constants.cpp" />
     <ClCompile Include="Cue.cpp" />
     <ClCompile Include="Image.cpp" />
@@ -151,6 +152,7 @@
     <ClInclude Include="BilliardTable.hpp" />
     <ClInclude Include="Character.hpp" />
     <ClInclude Include="Circle.hpp" />
+    <ClInclude Include="ColoredRectangle.hpp" />
     <ClInclude Include="Constants.hpp" />
     <ClInclude Include="Cue.hpp" />
     <ClInclude Include="Image.hpp" />

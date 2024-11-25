@@ -6,7 +6,8 @@
 
 void BilliardTable::drawTable(const char* vsSource, const char* fsSource, const char* texturePath) {
     // Compile and link shaders
-    shaderProgram = Shader::createShader(vsSource, fsSource);
+    if (shaderProgram == 0)
+        shaderProgram = Shader::createShader(vsSource, fsSource);
 
     GLuint indices[] = {
         0, 1, 2,   // First triangle

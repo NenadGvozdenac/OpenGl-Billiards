@@ -1,18 +1,10 @@
-#ifndef TABLE_EDGE_CPP
-#define TABLE_EDGE_CPP
+#ifndef COLORED_RECTANGLE_CPP
+#define COLORED_RECTANGLE_CPP
 
+#include "ColoredRectangle.hpp"
 #include "Constants.hpp"
-#include "TableEdge.hpp"
 
-TableEdge::TableEdge(float x1, float y1, float x2, float y2, float x3, float y3, float x4, float y4, TableEdgeType type)
-	: Rectangle(x1, y1, x2, y2, x3, y3, x4, y4, shaderProgram), type(type), visible(true) {
-}
-
-TableEdge::TableEdge(float x1, float y1, float x2, float y2, float x3, float y3, float x4, float y4, TableEdgeType type, bool visible)
-	: Rectangle(x1, y1, x2, y2, x3, y3, x4, y4, shaderProgram), type(type), visible(visible) {
-}
-
-void TableEdge::drawEdge(const char* vsSource, const char* fsSource) {
+void ColoredRectangle::draw(const char* vsSource, const char* fsSource, const char* texturePath) {
 	if (shaderProgram == 0)
 		shaderProgram = Shader::createShader(vsSource, fsSource);
 
@@ -49,16 +41,22 @@ void TableEdge::drawEdge(const char* vsSource, const char* fsSource) {
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
 	glBindVertexArray(0);
+
+	// Load and create a texture
+	image = new Image(texturePath);
+	image->loadImage();
 }
 
-void TableEdge::renderEdge() {
-	if (!visible) return;
-
+void ColoredRectangle::render() {
 	glUseProgram(shaderProgram);
 	glBindVertexArray(VAO);
 
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, image->getTextureID());
+
 	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
+	glBindTexture(GL_TEXTURE_2D, 0);
 	glBindVertexArray(0);
 	glUseProgram(0);
 }

@@ -10,6 +10,7 @@
 #include "BilliardBall.hpp"
 #include "Cue.hpp"
 #include "Character.hpp"
+#include "ColoredRectangle.hpp"
 
 const bool DISPLAY_EDGES = false;
 const float TARGET_FPS = 144.0f;
@@ -20,6 +21,61 @@ const float TEST_MOVE_SPEED = 0.03f;
 bool FIRST_BALL_HIT = false;
 
 bool GAME_OVER = false;
+
+bool overlayVisible = false;
+
+static std::vector<Character> drawText(std::string text, float startX, float startY, float charWidth, float charHeight);
+
+static void renderOverlay(GLFWwindow* window, std::vector<ColoredRectangle>& rectangles, std::vector<Character>& overlay, std::vector<Character>& continueText, std::vector<Character>& exitText) {
+	if (!overlayVisible) return;
+
+	for (ColoredRectangle& rectangle : rectangles) {
+		rectangle.render();
+	}
+
+	for (Character& character : overlay) {
+		character.renderCharacter();
+	}
+
+	for (Character& character : continueText) {
+		character.renderCharacter();
+	}
+
+	for (Character& character : exitText) {
+		character.renderCharacter();
+	}
+}
+
+void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
+	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
+		overlayVisible = !overlayVisible; // Toggle overlay visibility
+	}
+}
+
+void mouseCallback(GLFWwindow* window, int button, int action, int mods) {
+	if (action == GLFW_PRESS && overlayVisible) {
+		// Get mouse position
+		double xpos, ypos;
+		glfwGetCursorPos(window, &xpos, &ypos);
+
+		int windowWidth, windowHeight;
+		glfwGetWindowSize(window, &windowWidth, &windowHeight);
+
+		// Normalize mouse position to OpenGL coordinates (-1 to 1)
+		float x = 2.0f * xpos / windowWidth - 1.0f;
+		float y = 1.0f - 2.0f * ypos / windowHeight;
+
+		// Check "Continue" button bounds
+		if (x > -0.2f && x < 0.2f && y > -0.1f && y < 0.1f) {
+			overlayVisible = false; // Resume game
+		}
+
+		// Check "Exit" button bounds
+		if (x > -0.2f && x < 0.2f && y > -0.4f && y < -0.2f) {
+			glfwSetWindowShouldClose(window, true); // Close game
+		}
+	}
+}
 
 static bool resetCue(BilliardBall& cueBall, Cue& cue) {
 	cue = Cue(&cueBall, 1.f, 0.025f, 180, true, Color::BROWN);
@@ -40,7 +96,6 @@ static void checkCollisionsWithBalls(BilliardBall& ball, std::vector<BilliardBal
 		if (otherBall.potted) continue;
 		if (ball.number != otherBall.number) {
 			if (ball.checkCollision(&otherBall)) {
-				// If the cue ball hits another ball, it's not a foul
 				if (ball.type == Enums::BilliardBallType::CUE && !FIRST_BALL_HIT) {
 					FIRST_BALL_HIT = true;
 
@@ -264,27 +319,19 @@ static std::vector<Character> drawText(std::string text, float startX, float sta
 }
 
 static void setCueSpeed(std::vector<Character>& cueSpeed, Enums::HIT_SPEED hitSpeed) {
-	switch (hitSpeed) {
-	case Enums::HIT_SPEED::VERY_SLOW:
-		cueSpeed = drawText("Cue speed: 1", -0.9f, 0.91f, 0.03f, 0.05f);
-		break;
-	case Enums::HIT_SPEED::SLOW:
-		cueSpeed = drawText("Cue speed: 2", -0.9f, 0.91f, 0.03f, 0.05f);
-		break;
-	case Enums::HIT_SPEED::MEDIUM:
-		cueSpeed = drawText("Cue speed: 3", -0.9f, 0.91f, 0.03f, 0.05f);
-		break;
-	case Enums::HIT_SPEED::FAST:
-		cueSpeed = drawText("Cue speed: 4", -0.9f, 0.91f, 0.03f, 0.05f);
-		break;
-	case Enums::HIT_SPEED::VERY_FAST:
-		cueSpeed = drawText("Cue speed: 5", -0.9f, 0.91f, 0.03f, 0.05f);
-		break;
-	}
+	cueSpeed = drawText("Cue speed: " + to_string(hitSpeed + 1), -0.9f, 0.91f, 0.03f, 0.05f);
 }
 
 static void hideCueSpeed(std::vector<Character>& cueSpeed) {
 	cueSpeed = drawText("", -0.9f, 0.91f, 0.03f, 0.05f);
+}
+
+static void drawRectangles(std::vector<ColoredRectangle>& rectangles) {
+	rectangles.at(0).draw("basic.vert", "basic.frag", "strides/space.png");
+
+	for (int i = 1; i < rectangles.size(); i++) {
+		rectangles.at(i).draw("basic.vert", "basic.frag", "characters/space.png");
+	}
 }
 
 int main() {
@@ -302,6 +349,9 @@ int main() {
 		glfwTerminate();
 		return -1;
 	}
+
+	glfwSetKeyCallback(window, keyCallback);
+	glfwSetMouseButtonCallback(window, mouseCallback);
 
 	glfwSetWindowPos(window, Constants::CalculateWindowPositionX(), Constants::CalculateWindowPositionY());
 	glfwMakeContextCurrent(window);
@@ -354,10 +404,25 @@ int main() {
 		BilliardBall(0.52f, -0.12f, 0.03f, Enums::BilliardBallType::STRIPE, Color::BROWN, 15)  // Striped brown
 	};
 
+	std::vector<ColoredRectangle> coloredRectangles = {
+		ColoredRectangle(-1.f, -1.f, 1.f, -1.f, 1.f, 1.f, -1.f, 1.f, 0.0f),
+		ColoredRectangle(-0.2f, -0.1f, 0.2f, -0.1f, 0.2f, 0.1f, -0.2f, 0.1f, 0.0f),
+		ColoredRectangle(-0.2f, -0.4f, 0.2f, -0.4f, 0.2f, -0.2f, -0.2f, -0.2f, 0.0f)
+	};
+
 	drawBilliardTable(table);
 	drawEdges(edges);
 	drawPotholes(potholes);
 	drawBalls(billiardBalls);
+	drawRectangles(coloredRectangles);
+
+	std::vector<Character> index = drawText("RA133/2021", 0.5f, 0.91f, 0.03f, 0.05f);
+	std::vector<Character> nameAndLastName = drawText("Nenad Gvozdenac", 0.5f, 0.85f, 0.03f, 0.05f);
+	std::vector<Character> cueSpeed = drawText("Cue speed: 3", -0.9f, 0.91f, 0.03f, 0.05f);
+
+	std::vector<Character> overlay = drawText("Game over!", -0.275f, 0.5f, 0.06f, 0.1f);
+	std::vector<Character> continueText = drawText("Continue", -0.125f, -0.025f, 0.03f, 0.05f);
+	std::vector<Character> exitText = drawText("Exit", -0.065f, -0.325f, 0.03f, 0.05f);
 
 	BilliardBall& cueBall = billiardBalls[0];
 	Cue cue(&cueBall, 1.f, 0.025f, 180, true, Color::BROWN);
@@ -368,16 +433,8 @@ int main() {
 
 	bool RECREATED_CUE = false;
 
-	std::vector<Character> characters = drawText("RA133/2021", 0.5f, 0.91f, 0.03f, 0.05f);
-	std::vector<Character> nameAndLastName = drawText("Nenad Gvozdenac", 0.5f, 0.85f, 0.03f, 0.05f);
-	std::vector<Character> cueSpeed = drawText("Cue speed: 3", -0.9f, 0.91f, 0.03f, 0.05f);
-
 	while (!glfwWindowShouldClose(window) && !GAME_OVER) {
 		float frameStartTime = glfwGetTime();
-
-		if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
-			glfwSetWindowShouldClose(window, GL_TRUE);
-		}
 
 		// Get current time and compute delta time (dt)
 		float currentTime = glfwGetTime();
@@ -385,7 +442,7 @@ int main() {
 		previousTime = currentTime;  // Update previousTime for the next iteration
 
 		// Left click
-		if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS) {
+		if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS && !overlayVisible) {
 			double xpos, ypos;
 			glfwGetCursorPos(window, &xpos, &ypos);
 
@@ -393,7 +450,7 @@ int main() {
 		}
 
 		// Right click
-		if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS && !cueBall.moving()) {
+		if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS && !cueBall.moving() && !overlayVisible) {
 			float angle = cue.angle;
 			cueBall.hitBall(angle, cue.hitSpeed);
 			GAME_STARTED = true;
@@ -403,13 +460,14 @@ int main() {
 			hideCueSpeed(cueSpeed);
 		}
 
-		if (checkIfGameOver(billiardBalls)) {
+		// Check if the game is over
+		if (checkIfGameOver(billiardBalls) && !overlayVisible) {
 			GAME_OVER = true;
 			cout << "Game over!" << endl;
 		}
 
 		// On press q, reset the cue ball
-		if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS) {
+		if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS && !overlayVisible) {
 			cueBall.reset();
 			resetCue(cueBall, cue);
 			resetAllBalls(billiardBalls);
@@ -417,8 +475,14 @@ int main() {
 			setCueSpeed(cueSpeed, Enums::HIT_SPEED::MEDIUM);
 		}
 
-		// Before game started, cue ball can be moved from y -0.3 to 0.3 
-		if (!GAME_STARTED) {
+		// On press e, reset the angle of the cue
+		if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS && !overlayVisible) {
+			cue.angle = 180;
+			resetCue(cueBall, cue);
+		}
+
+		// Before game started, cue ball can be moved from y -0.312 to 0.3 ; x -0.57 to -0.345
+		if (!GAME_STARTED && !overlayVisible) {
 			if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS && cue.y1 <= 0.300f)
 				moveCueBall(cue, cueBall, Enums::MOVE_DIRECTION::UP, TEST_MOVE_SPEED);
 
@@ -433,35 +497,35 @@ int main() {
 		}
 
 		// 1 - Very slow speed; 2 - Slow speed; 3 - Normal speed; 4 - Fast speed; 5 - Very fast speed
-		if (glfwGetKey(window, GLFW_KEY_1) == GLFW_PRESS) {
+		if (glfwGetKey(window, GLFW_KEY_1) == GLFW_PRESS && !overlayVisible) {
 			setCueSpeed(cueSpeed, Enums::HIT_SPEED::VERY_SLOW);
 			cue.switchCueSpeed(Enums::HIT_SPEED::VERY_SLOW);
 		}
-		else if (glfwGetKey(window, GLFW_KEY_2) == GLFW_PRESS) {
+		else if (glfwGetKey(window, GLFW_KEY_2) == GLFW_PRESS && !overlayVisible) {
 			setCueSpeed(cueSpeed, Enums::HIT_SPEED::SLOW);
 			cue.switchCueSpeed(Enums::HIT_SPEED::SLOW);
 		}
-		else if (glfwGetKey(window, GLFW_KEY_3) == GLFW_PRESS) {
+		else if (glfwGetKey(window, GLFW_KEY_3) == GLFW_PRESS && !overlayVisible) {
 			setCueSpeed(cueSpeed, Enums::HIT_SPEED::MEDIUM);
 			cue.switchCueSpeed(Enums::HIT_SPEED::MEDIUM);
 		}
-		else if (glfwGetKey(window, GLFW_KEY_4) == GLFW_PRESS) {
+		else if (glfwGetKey(window, GLFW_KEY_4) == GLFW_PRESS && !overlayVisible) {
 			setCueSpeed(cueSpeed, Enums::HIT_SPEED::FAST);
 			cue.switchCueSpeed(Enums::HIT_SPEED::FAST);
 		}
-		else if (glfwGetKey(window, GLFW_KEY_5) == GLFW_PRESS) {
+		else if (glfwGetKey(window, GLFW_KEY_5) == GLFW_PRESS && !overlayVisible) {
 			setCueSpeed(cueSpeed, Enums::HIT_SPEED::VERY_FAST);
 			cue.switchCueSpeed(Enums::HIT_SPEED::VERY_FAST);
 		}
 
 		// Check if the cue ball is potted or black ball was first hit
-		if (checkIfFoul(billiardBalls)) {
+		if (checkIfFoul(billiardBalls) && !overlayVisible) {
 			cout << "Foul!" << endl;
 			cueBall.reset();
 			resetAllBalls(billiardBalls);
 		}
 
-		if (isTurnOver(billiardBalls) && GAME_STARTED) {
+		if (isTurnOver(billiardBalls) && GAME_STARTED && !overlayVisible) {
 			if (!RECREATED_CUE) {
 				resetCue(cueBall, cue);
 				setCueSpeed(cueSpeed, Enums::HIT_SPEED::MEDIUM);
@@ -503,7 +567,7 @@ int main() {
 		cue.render();
 
 		// Render the index
-		for (Character& character : characters) {
+		for (Character& character : index) {
 			character.renderCharacter();
 		}
 
@@ -516,6 +580,9 @@ int main() {
 		for (Character& character : cueSpeed) {
 			character.renderCharacter();
 		}
+
+		// Render overlay if active
+		renderOverlay(window, coloredRectangles, overlay, continueText, exitText);
 
 		glfwSwapBuffers(window);
 		glfwPollEvents();

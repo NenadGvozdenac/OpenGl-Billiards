@@ -8,7 +8,8 @@
 PotHole::PotHole(float x, float y, float radius) : Circle(x, y, radius) {}
 
 void PotHole::draw(const char* vsSource, const char* fsSource, const char* texturePath) {
-    shaderProgram = Shader::createShader(vsSource, fsSource);
+    if (shaderProgram == 0)
+        shaderProgram = Shader::createShader(vsSource, fsSource);
 
     // Generate the circle vertices
     for (int i = -1; i <= Constants::NUM_SEGMENTS; i++) {

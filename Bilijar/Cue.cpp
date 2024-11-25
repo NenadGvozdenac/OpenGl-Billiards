@@ -37,7 +37,8 @@ void Cue::draw(const char* vsSource, const char* fsSource, const char* texturePa
 		return;
 	}
 
-	shaderProgram = Shader::createShader(vsSource, fsSource);
+	if (shaderProgram == 0)
+		shaderProgram = Shader::createShader(vsSource, fsSource);
 
 	// Set up color uniform
 	GLint colorUniformLocation = glGetUniformLocation(shaderProgram, "ballColor");
