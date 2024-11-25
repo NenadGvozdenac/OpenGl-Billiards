@@ -19,15 +19,472 @@ bool GAME_STARTED = false;
 const float TEST_MOVE_SPEED = 0.03f;
 
 bool FIRST_BALL_HIT = false;
-
 bool GAME_OVER = false;
+bool FIRST_TURN_OVER = false;
 
-bool overlayVisible = false;
+bool pauseOverlayVisible = false;
+bool gameOverOverlayVisible = false;
 
-static std::vector<Character> drawText(std::string text, float startX, float startY, float charWidth, float charHeight);
+bool FOUL = false;
+bool STOP_WRITING = false;
 
-static void renderOverlay(GLFWwindow* window, std::vector<ColoredRectangle>& rectangles, std::vector<Character>& overlay, std::vector<Character>& continueText, std::vector<Character>& exitText) {
-	if (!overlayVisible) return;
+int nextBall = 1;
+int turnNumberN = 1;
+int ballsPottedNumber = 0;
+int ballsLeftNumber = 9;
+
+std::vector<Character> drawText(std::string text, float startX, float startY, float charWidth, float charHeight);
+
+void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
+void mouseCallback(GLFWwindow* window, int button, int action, int mods);
+
+void drawBilliardTable(BilliardTable& table);
+void drawEdges(std::vector<TableEdge>& edges);
+void drawPotholes(std::vector<PotHole>& potholes);
+void drawBalls(std::vector<BilliardBall>& billiardBalls);
+void drawCue(BilliardBall& cueBall, Cue& cue);
+void drawRectangles(std::vector<ColoredRectangle>& rectangles);
+
+void renderBilliardTable(BilliardTable& table);
+void renderEdges(std::vector<TableEdge>& edges);
+void renderPotholes(std::vector<PotHole>& holes, float dt);
+void renderBalls(std::vector<BilliardBall>& balls, float dt);
+
+void checkCollisionsWithBalls(BilliardBall& ball, std::vector<BilliardBall>& balls);
+void checkCollisionsWithEdges(BilliardBall& ball, std::vector<TableEdge>& edges);
+void checkCollisionsWithHoles(BilliardBall& ball, std::vector<PotHole>& holes);
+
+void moveCueBall(Cue& cue, BilliardBall& cueBall, Enums::MOVE_DIRECTION move_direction, float move_quantity);
+
+bool resetCue(BilliardBall& cueBall, Cue& cue);
+bool isTurnOver(std::vector<BilliardBall>& balls);
+bool checkIfFoul(std::vector<BilliardBall>& balls);
+bool isEndOfTurn(std::vector<BilliardBall>& balls);
+void resetAllBalls(std::vector<BilliardBall>& balls);
+bool isGameOver(std::vector<BilliardBall>& balls);
+
+BilliardBall findBlackBall(std::vector<BilliardBall>& balls);
+BilliardBall* findNextBall(std::vector<BilliardBall>& balls);
+void drawNextBall(BilliardBall** nextBall, Color color);
+
+void setCueSpeed(std::vector<Character>& cueSpeed, Enums::HIT_SPEED hitSpeed);
+void hideCueSpeed(std::vector<Character>& cueSpeed);
+
+void renderOverlay(GLFWwindow* window, bool condition, std::vector<ColoredRectangle>& rectangles, std::vector<Character>& overlay, std::vector<Character>& continueText, std::vector<Character>& exitText);
+void renderNextBall(BilliardBall* nextBall);
+
+int findNumberOfBallsPotted(std::vector<BilliardBall>& balls);
+int findNumberOfBallsLeft(std::vector<BilliardBall>& balls);
+
+void setBallsPotted(std::vector<Character>& ballsPotted, int ballsPottedNumber);
+void setBallsLeft(std::vector<Character>& ballsLeft, int ballsLeftNumber);
+void setTurnNumber(std::vector<Character>& turnNumber, int turnNumberN);
+
+int main() {
+	if (!glfwInit()) {
+		cerr << "Failed to initialize GLFW" << endl;
+		return -1;
+	}
+
+	glfwWindowHint(GLFW_RESIZABLE, Constants::windowResizable);
+
+	GLFWwindow* window = glfwCreateWindow(Constants::windowWidth, Constants::windowHeight, Constants::windowName, NULL, NULL);
+
+	if (!window) {
+		cerr << "Failed to create window" << endl;
+		glfwTerminate();
+		return -1;
+	}
+
+	glfwSetKeyCallback(window, keyCallback);
+	glfwSetMouseButtonCallback(window, mouseCallback);
+
+	glfwSetWindowPos(window, Constants::CalculateWindowPositionX(), Constants::CalculateWindowPositionY());
+	glfwMakeContextCurrent(window);
+
+	if (glewInit() != GLEW_OK) {
+		cerr << "Failed to initialize GLEW" << endl;
+		glfwTerminate();
+		return -1;
+	}
+
+	glClearColor(0.8f, 0.8f, 0.8f, 1.0f);
+
+	// Create and configure the billiard table
+	BilliardTable table;
+
+	std::vector<TableEdge> edges = {
+		TableEdge(-0.645f, 0.375f, -0.67f, 0.385f, -0.0325f, 0.385f, -0.0325f, 0.375f, TableEdgeType::TOP, DISPLAY_EDGES),
+		TableEdge(0.0465f, 0.375f, 0.0465f, 0.385f, 0.685f, 0.385f, 0.655f, 0.375f, TableEdgeType::TOP, DISPLAY_EDGES),
+		TableEdge(-0.645f, -0.375f, -0.67f, -0.385f, -0.0325f, -0.385f, -0.0325f, -0.375f, TableEdgeType::BOTTOM, DISPLAY_EDGES),
+		TableEdge(0.0465f, -0.375f, 0.0465f, -0.385f, 0.685f, -0.385f, 0.655f, -0.375f, TableEdgeType::BOTTOM, DISPLAY_EDGES),
+		TableEdge(-0.715f, -0.343f, -0.715f, 0.35f, -0.705f, 0.34f, -0.705f, -0.333f, TableEdgeType::LEFT, DISPLAY_EDGES),
+		TableEdge(0.723f, -0.343f, 0.723f, 0.35f, 0.713f, 0.34f, 0.713f, -0.333f, TableEdgeType::RIGHT, DISPLAY_EDGES)
+	};
+
+	std::vector<PotHole> potholes = {
+		PotHole(0.725f, 0.39f, 0.04f),
+		PotHole(-0.713f, 0.39f, 0.04f),
+		PotHole(0.725f, -0.376f, 0.04f),
+		PotHole(-0.715f, -0.378f, 0.04f),
+		PotHole(0.005f, 0.42f, 0.04f),
+		PotHole(0.005f, -0.405f, 0.04f)
+	};
+
+	std::vector<BilliardBall> billiardBalls = {
+		BilliardBall(Constants::CUE_BALL_STARTING_POS_X, Constants::CUE_BALL_STARTING_POS_Y, 0.03f, Enums::BilliardBallType::CUE, Color::WHITE, 0),
+		BilliardBall(0.32f, 0.0f, 0.03f, Enums::BilliardBallType::SOLID, Color::YELLOW, 1),
+		BilliardBall(0.37f, 0.03f, 0.03f, Enums::BilliardBallType::SOLID, Color::BLUE, 2),
+		BilliardBall(0.37f, -0.03f, 0.03f, Enums::BilliardBallType::SOLID, Color::RED, 3),
+		BilliardBall(0.42f, 0.06f, 0.03f, Enums::BilliardBallType::SOLID, Color::PURPLE, 4),
+		BilliardBall(0.42f, 0.0f, 0.03f, Enums::BilliardBallType::STRIPE, Color::PINK, 9),
+		BilliardBall(0.42f, -0.06f, 0.03f, Enums::BilliardBallType::SOLID, Color::ORANGE, 5),
+		BilliardBall(0.47f, 0.03f, 0.03f, Enums::BilliardBallType::SOLID, Color::GREEN, 6),
+		BilliardBall(0.47f, -0.03f, 0.03f, Enums::BilliardBallType::SOLID, Color::BROWN, 7),
+		BilliardBall(0.52f, 0.0f, 0.03f, Enums::BilliardBallType::BLACK, Color::BLACK, 8),
+	};
+
+	BilliardBall* nextBall = new BilliardBall(-0.55f, 0.871f, 0.03f, Enums::BilliardBallType::SOLID, Color::YELLOW, 1);
+	nextBall->draw("basic.vert", "ball.frag", nullptr);
+
+	std::vector<ColoredRectangle> coloredRectangles = {
+		ColoredRectangle(-1.f, -1.f, 1.f, -1.f, 1.f, 1.f, -1.f, 1.f, 0.0f),
+		ColoredRectangle(-0.2f, -0.1f, 0.2f, -0.1f, 0.2f, 0.1f, -0.2f, 0.1f, 0.0f),
+		ColoredRectangle(-0.2f, -0.4f, 0.2f, -0.4f, 0.2f, -0.2f, -0.2f, -0.2f, 0.0f)
+	};
+
+	drawBilliardTable(table);
+	drawEdges(edges);
+	drawPotholes(potholes);
+	drawBalls(billiardBalls);
+	drawRectangles(coloredRectangles);
+
+	std::vector<Character> index = drawText("RA133/2021", 0.5f, 0.91f, 0.03f, 0.05f);
+	std::vector<Character> nameAndLastName = drawText("Nenad Gvozdenac", 0.5f, 0.85f, 0.03f, 0.05f);
+	std::vector<Character> cueSpeed = drawText("Cue speed: 3", -0.9f, 0.91f, 0.03f, 0.05f);
+	std::vector<Character> nextBallText = drawText("Next ball: ", -0.9f, 0.85f, 0.03f, 0.05f);
+	std::vector<Character> ballsPotted = drawText("Balls potted: " + to_string(ballsPottedNumber), -0.9f, 0.79f, 0.03f, 0.05f);
+	std::vector<Character> ballsLeft = drawText("Balls left: " + to_string(ballsLeftNumber), -0.9f, 0.73f, 0.03f, 0.05f);
+	std::vector<Character> turnNumber = drawText("Turn number: " + to_string(turnNumberN), -0.9f, 0.67f, 0.03f, 0.05f);
+
+	std::vector<Character> gamePaused = drawText("Game paused", -0.335f, 0.5f, 0.06f, 0.1f);
+	std::vector<Character> continueText = drawText("Continue", -0.125f, -0.025f, 0.03f, 0.05f);
+	std::vector<Character> exitText = drawText("Exit", -0.065f, -0.325f, 0.03f, 0.05f);
+
+	std::vector<Character> gameOver = drawText("Game over", -0.3f, 0.5f, 0.06f, 0.1f);
+	std::vector<Character> playAgainText = drawText("Play again", -0.155f, -0.025f, 0.03f, 0.05f);
+
+	BilliardBall& cueBall = billiardBalls[0];
+	Cue cue(&cueBall, 1.f, 0.025f, 180, true, Color::BROWN);
+	cue.draw("basic.vert", "ball.frag", nullptr);
+
+	float previousTime = glfwGetTime();  // Initialize previous time
+	float dt = 0.0f;  // Delta time
+
+	bool RECREATED_CUE = true;
+
+	while (!glfwWindowShouldClose(window) && !GAME_OVER) {
+		float frameStartTime = glfwGetTime();
+
+		// Get current time and compute delta time (dt)
+		float currentTime = glfwGetTime();
+		dt = currentTime - previousTime;  // Calculate the difference
+		previousTime = currentTime;  // Update previousTime for the next iteration
+
+		// Left click
+		if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS && !pauseOverlayVisible) {
+			double xpos, ypos;
+			glfwGetCursorPos(window, &xpos, &ypos);
+
+			cue.rotateCue(xpos, ypos);
+		}
+
+		// Right click
+		if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS && !cueBall.moving() && !pauseOverlayVisible && RECREATED_CUE) {
+			float angle = cue.angle;
+			cueBall.hitBall(angle, cue.hitSpeed);
+			GAME_STARTED = true;
+			RECREATED_CUE = false;
+			FIRST_BALL_HIT = false;
+			cue.visible = false;
+			hideCueSpeed(cueSpeed);
+		}
+
+		if (GAME_STARTED) {
+			// On the end of turn
+			if (isTurnOver(billiardBalls) && !pauseOverlayVisible) {
+				FIRST_TURN_OVER = true;
+			}
+		}
+
+		// On press q, reset the cue ball
+		if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS && !pauseOverlayVisible) {
+			cueBall.reset();
+			resetCue(cueBall, cue);
+			resetAllBalls(billiardBalls);
+			GAME_STARTED = false;
+			FIRST_BALL_HIT = false;
+			FIRST_TURN_OVER = false;
+			RECREATED_CUE = true;
+			setCueSpeed(cueSpeed, Enums::HIT_SPEED::MEDIUM);
+
+			turnNumberN = 1;
+			ballsPottedNumber = 0;
+			ballsLeftNumber = 9;
+
+			setBallsPotted(ballsPotted, ballsPottedNumber);
+			setBallsLeft(ballsLeft, ballsLeftNumber);
+			setTurnNumber(turnNumber, turnNumberN);
+		}
+
+		// On press e, reset the angle of the cue
+		if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS && !pauseOverlayVisible) {
+			cue.angle = 180;
+			resetCue(cueBall, cue);
+		}
+
+		// Before game started, cue ball can be moved from y -0.312 to 0.3 ; x -0.57 to -0.345
+		if (!GAME_STARTED && !pauseOverlayVisible) {
+			if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS && cue.y1 <= 0.300f)
+				moveCueBall(cue, cueBall, Enums::MOVE_DIRECTION::UP, TEST_MOVE_SPEED);
+
+			if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS && cue.y2 >= -0.312f)
+				moveCueBall(cue, cueBall, Enums::MOVE_DIRECTION::DOWN, TEST_MOVE_SPEED);
+
+			if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS && cue.x1 >= -0.57f)
+				moveCueBall(cue, cueBall, Enums::MOVE_DIRECTION::LEFT, TEST_MOVE_SPEED);
+
+			if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS && cue.x3 <= -0.345f)
+				moveCueBall(cue, cueBall, Enums::MOVE_DIRECTION::RIGHT, TEST_MOVE_SPEED);
+		}
+
+		if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS && gameOverOverlayVisible) {
+			// Get mouse position
+			double xpos, ypos;
+			glfwGetCursorPos(window, &xpos, &ypos);
+
+			int windowWidth, windowHeight;
+			glfwGetWindowSize(window, &windowWidth, &windowHeight);
+
+			// Normalize mouse position to OpenGL coordinates (-1 to 1)
+			float x1 = 2.0f * xpos / windowWidth - 1.0f;
+			float y1 = 1.0f - 2.0f * ypos / windowHeight;
+
+			// Check "StartGameAgain" button bounds
+			if (x1 > -0.2f && x1 < 0.2f && y1 > -0.1f && y1 < 0.1f) {
+				cueBall.reset();
+				resetCue(cueBall, cue);
+				resetAllBalls(billiardBalls);
+				GAME_STARTED = false;
+				FIRST_BALL_HIT = false;
+				RECREATED_CUE = true;
+				FIRST_TURN_OVER = false;
+				setCueSpeed(cueSpeed, Enums::HIT_SPEED::MEDIUM);
+				gameOverOverlayVisible = false;
+			}
+
+			// Check "Exit" button bounds
+			if (x1 > -0.2f && x1 < 0.2f && y1 > -0.4f && y1 < -0.2f) {
+				glfwSetWindowShouldClose(window, true); // Close game
+			}
+		}
+
+		// 1 - Very slow speed; 2 - Slow speed; 3 - Normal speed; 4 - Fast speed; 5 - Very fast speed
+		if (glfwGetKey(window, GLFW_KEY_1) == GLFW_PRESS && !pauseOverlayVisible) {
+			setCueSpeed(cueSpeed, Enums::HIT_SPEED::VERY_SLOW);
+			cue.switchCueSpeed(Enums::HIT_SPEED::VERY_SLOW);
+		}
+		else if (glfwGetKey(window, GLFW_KEY_2) == GLFW_PRESS && !pauseOverlayVisible) {
+			setCueSpeed(cueSpeed, Enums::HIT_SPEED::SLOW);
+			cue.switchCueSpeed(Enums::HIT_SPEED::SLOW);
+		}
+		else if (glfwGetKey(window, GLFW_KEY_3) == GLFW_PRESS && !pauseOverlayVisible) {
+			setCueSpeed(cueSpeed, Enums::HIT_SPEED::MEDIUM);
+			cue.switchCueSpeed(Enums::HIT_SPEED::MEDIUM);
+		}
+		else if (glfwGetKey(window, GLFW_KEY_4) == GLFW_PRESS && !pauseOverlayVisible) {
+			setCueSpeed(cueSpeed, Enums::HIT_SPEED::FAST);
+			cue.switchCueSpeed(Enums::HIT_SPEED::FAST);
+		}
+		else if (glfwGetKey(window, GLFW_KEY_5) == GLFW_PRESS && !pauseOverlayVisible) {
+			setCueSpeed(cueSpeed, Enums::HIT_SPEED::VERY_FAST);
+			cue.switchCueSpeed(Enums::HIT_SPEED::VERY_FAST);
+		}
+
+		// Check if the cue ball is potted or black ball was first hit
+		if (checkIfFoul(billiardBalls) && !pauseOverlayVisible) {
+			cout << "Foul!" << endl;
+			cueBall.reset();
+			resetAllBalls(billiardBalls);
+		}
+
+		glClearColor(0.8f, 0.8f, 0.8f, 1.0f);
+		glClear(GL_COLOR_BUFFER_BIT);
+
+		// Render the table
+		renderBilliardTable(table);
+
+		// Render the edges
+		renderEdges(edges);
+
+		// Render the pothole
+		renderPotholes(potholes, dt);
+
+		// Render the cue ball
+		renderBalls(billiardBalls, dt);
+
+		// Render the cue
+		cue.render();
+
+		// Check all collision with balls
+		for (BilliardBall& ball : billiardBalls) {
+			checkCollisionsWithBalls(ball, billiardBalls);
+		}
+
+		// Check all collision with edges
+		for (BilliardBall& ball : billiardBalls) {
+			checkCollisionsWithEdges(ball, edges);
+		}
+
+		// Check all collision with holes
+		for (BilliardBall& ball : billiardBalls) {
+			checkCollisionsWithHoles(ball, potholes);
+		}
+
+		// Render the index
+		for (Character& character : index) {
+			character.renderCharacter();
+		}
+
+		// Render the name
+		for (Character& character : nameAndLastName) {
+			character.renderCharacter();
+		}
+
+		// Render the cue speed
+		for (Character& character : cueSpeed) {
+			character.renderCharacter();
+		}
+
+		// Render the balls potted
+		for (Character& character : ballsPotted) {
+			character.renderCharacter();
+		}
+
+		// Render the balls left
+		for (Character& character : ballsLeft) {
+			character.renderCharacter();
+		}
+
+		// Render the turn number
+		for (Character& character : turnNumber) {
+			character.renderCharacter();
+		}
+
+		// End of the turn
+		if (isEndOfTurn(billiardBalls)) {
+			for (Character& character : nextBallText) {
+				character.renderCharacter();
+			}
+
+			if (!RECREATED_CUE) {
+				if (isGameOver(billiardBalls)) {
+					gameOverOverlayVisible = true;
+					BilliardBall* ballNew = findNextBall(billiardBalls);
+
+					if (STOP_WRITING)
+						if (ballNew == nullptr || !FOUL) {
+							gameOver = drawText("You won", -0.2f, 0.5f, 0.06f, 0.1f);
+							STOP_WRITING = true;
+						}
+						else {
+							gameOver = drawText("You lost", -0.3f, 0.5f, 0.06f, 0.1f);
+							STOP_WRITING = true;
+						}
+				}
+
+				if (!isGameOver(billiardBalls)) {
+					resetCue(cueBall, cue);
+					setCueSpeed(cueSpeed, Enums::HIT_SPEED::MEDIUM);
+					RECREATED_CUE = true;
+
+					BilliardBall* ballNew = findNextBall(billiardBalls);
+
+					if (ballNew != nullptr) {
+						drawNextBall(&nextBall, ballNew->color);
+					}
+				}
+
+				setBallsPotted(ballsPotted, findNumberOfBallsPotted(billiardBalls));
+				setBallsLeft(ballsLeft, findNumberOfBallsLeft(billiardBalls) - 1);
+				setTurnNumber(turnNumber, turnNumberN + 1);
+			}
+
+			// Render the next ball
+			renderNextBall(nextBall);
+
+		}
+
+		// Render overlay if active
+		renderOverlay(window, pauseOverlayVisible, coloredRectangles, gamePaused, continueText, exitText);
+
+		// Render the game over overlay
+		renderOverlay(window, gameOverOverlayVisible, coloredRectangles, gameOver, playAgainText, exitText);
+
+		glfwSwapBuffers(window);
+		glfwPollEvents();
+
+		// Frame end time and FPS cap
+		float frameEndTime = glfwGetTime();
+		float frameDuration = frameEndTime - frameStartTime;
+
+		if (frameDuration < TARGET_FRAME_TIME) {
+			float sleepTime = TARGET_FRAME_TIME - frameDuration;
+			std::this_thread::sleep_for(std::chrono::duration<float>(sleepTime));
+		}
+	}
+
+	glfwTerminate();
+	return 0;
+}
+
+void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
+	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
+		pauseOverlayVisible = !pauseOverlayVisible; // Toggle overlay visibility
+	}
+
+	if (key == GLFW_KEY_F5 && action == GLFW_PRESS) {
+		gameOverOverlayVisible = !gameOverOverlayVisible; // Toggle overlay visibility FOR TESTING ONLY
+	}
+}
+
+void mouseCallback(GLFWwindow* window, int button, int action, int mods) {
+	if (action == GLFW_PRESS && pauseOverlayVisible) {
+		// Get mouse position
+		double xpos, ypos;
+		glfwGetCursorPos(window, &xpos, &ypos);
+
+		int windowWidth, windowHeight;
+		glfwGetWindowSize(window, &windowWidth, &windowHeight);
+
+		// Normalize mouse position to OpenGL coordinates (-1 to 1)
+		float x = 2.0f * xpos / windowWidth - 1.0f;
+		float y = 1.0f - 2.0f * ypos / windowHeight;
+
+		// Check "Continue" button bounds
+		if (x > -0.2f && x < 0.2f && y > -0.1f && y < 0.1f) {
+			pauseOverlayVisible = false; // Resume game
+		}
+
+		// Check "Exit" button bounds
+		if (x > -0.2f && x < 0.2f && y > -0.4f && y < -0.2f) {
+			glfwSetWindowShouldClose(window, true); // Close game
+		}
+	}
+}
+
+static void renderOverlay(GLFWwindow* window, bool condition, std::vector<ColoredRectangle>& rectangles, std::vector<Character>& overlay, std::vector<Character>& continueText, std::vector<Character>& exitText) {
+	if (!condition) return;
 
 	for (ColoredRectangle& rectangle : rectangles) {
 		rectangle.render();
@@ -46,37 +503,6 @@ static void renderOverlay(GLFWwindow* window, std::vector<ColoredRectangle>& rec
 	}
 }
 
-void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
-	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
-		overlayVisible = !overlayVisible; // Toggle overlay visibility
-	}
-}
-
-void mouseCallback(GLFWwindow* window, int button, int action, int mods) {
-	if (action == GLFW_PRESS && overlayVisible) {
-		// Get mouse position
-		double xpos, ypos;
-		glfwGetCursorPos(window, &xpos, &ypos);
-
-		int windowWidth, windowHeight;
-		glfwGetWindowSize(window, &windowWidth, &windowHeight);
-
-		// Normalize mouse position to OpenGL coordinates (-1 to 1)
-		float x = 2.0f * xpos / windowWidth - 1.0f;
-		float y = 1.0f - 2.0f * ypos / windowHeight;
-
-		// Check "Continue" button bounds
-		if (x > -0.2f && x < 0.2f && y > -0.1f && y < 0.1f) {
-			overlayVisible = false; // Resume game
-		}
-
-		// Check "Exit" button bounds
-		if (x > -0.2f && x < 0.2f && y > -0.4f && y < -0.2f) {
-			glfwSetWindowShouldClose(window, true); // Close game
-		}
-	}
-}
-
 static bool resetCue(BilliardBall& cueBall, Cue& cue) {
 	cue = Cue(&cueBall, 1.f, 0.025f, 180, true, Color::BROWN);
 	cue.draw("basic.vert", "ball.frag", nullptr);
@@ -88,8 +514,6 @@ static void moveCueBall(Cue& cue, BilliardBall& cueBall, Enums::MOVE_DIRECTION m
 	resetCue(cueBall, cue);
 }
 
-static void resetAllBalls(vector<BilliardBall>& balls);
-
 static void checkCollisionsWithBalls(BilliardBall& ball, std::vector<BilliardBall>& balls) {
 	if (ball.potted) return;
 	for (BilliardBall& otherBall : balls) {
@@ -99,10 +523,10 @@ static void checkCollisionsWithBalls(BilliardBall& ball, std::vector<BilliardBal
 				if (ball.type == Enums::BilliardBallType::CUE && !FIRST_BALL_HIT) {
 					FIRST_BALL_HIT = true;
 
-					if (ball.number == 0 && otherBall.number == 8) {
+					if (ball.number == 0 && otherBall.number != nextBall && FIRST_BALL_HIT && FIRST_TURN_OVER) {
 						cout << "Foul!" << endl;
 						ball.reset();
-						resetAllBalls(balls);
+						FOUL = true;
 					}
 				}
 			}
@@ -204,41 +628,9 @@ static bool checkIfFoul(std::vector<BilliardBall>& balls) {
 	BilliardBall cueBall = balls[0];
 	BilliardBall blackBall = findBlackBall(balls);
 
-	if (cueBall.checkCollision(&blackBall)) {
-		// If its the first ball hit, its a foul
-		if (!FIRST_BALL_HIT) {
-			return true;
-		}
-	}
-
 	if (cueBall.potted) {
 		return true;
-	}
-
-	return false;
-}
-
-static bool checkIfGameOver(std::vector<BilliardBall>& balls) {
-	int solids = 0;
-	int stripes = 0;
-
-	BilliardBall blackBall = findBlackBall(balls);
-
-	if (blackBall.potted) {
-		return true;
-	}
-
-	for (BilliardBall& ball : balls) {
-		if (ball.type == Enums::BilliardBallType::SOLID && ball.potted) {
-			solids++;
-		}
-		else if (ball.type == Enums::BilliardBallType::STRIPE && ball.potted) {
-			stripes++;
-		}
-	}
-
-	if (solids == 7 || stripes == 7) {
-		return true;
+		FOUL = true;
 	}
 
 	return false;
@@ -246,22 +638,16 @@ static bool checkIfGameOver(std::vector<BilliardBall>& balls) {
 
 static void resetAllBalls(vector<BilliardBall>& balls) {
 	balls = {
-		BilliardBall(Constants::CUE_BALL_STARTING_POS_X, Constants::CUE_BALL_STARTING_POS_Y, 0.03f, Enums::BilliardBallType::CUE, Color::WHITE, 0), // Cue ball
-		BilliardBall(0.32f, 0.0f, 0.03f, Enums::BilliardBallType::SOLID, Color::YELLOW, 1),    // Solid yellow
-		BilliardBall(0.37f, 0.03f, 0.03f, Enums::BilliardBallType::SOLID, Color::BLUE, 2),     // Solid blue
-		BilliardBall(0.37f, -0.03f, 0.03f, Enums::BilliardBallType::SOLID, Color::RED, 3),     // Solid red
-		BilliardBall(0.42f, 0.06f, 0.03f, Enums::BilliardBallType::SOLID, Color::PURPLE, 4),   // Solid purple
-		BilliardBall(0.42f, 0.0f, 0.03f, Enums::BilliardBallType::BLACK, Color::BLACK, 8),    // Solid orange
-		BilliardBall(0.42f, -0.06f, 0.03f, Enums::BilliardBallType::SOLID, Color::GREEN, 6),   // Solid green
-		BilliardBall(0.47f, 0.09f, 0.03f, Enums::BilliardBallType::SOLID, Color::BROWN, 7),    // Solid brown
-		BilliardBall(0.47f, 0.03f, 0.03f, Enums::BilliardBallType::SOLID, Color::ORANGE, 5),    // Black ball
-		BilliardBall(0.47f, -0.03f, 0.03f, Enums::BilliardBallType::STRIPE, Color::YELLOW, 9), // Striped yellow
-		BilliardBall(0.47f, -0.09f, 0.03f, Enums::BilliardBallType::STRIPE, Color::BLUE, 10),  // Striped blue
-		BilliardBall(0.52f, 0.12f, 0.03f, Enums::BilliardBallType::STRIPE, Color::RED, 11),    // Striped red
-		BilliardBall(0.52f, 0.06f, 0.03f, Enums::BilliardBallType::STRIPE, Color::PURPLE, 12), // Striped purple
-		BilliardBall(0.52f, 0.0f, 0.03f, Enums::BilliardBallType::STRIPE, Color::ORANGE, 13),  // Striped orange
-		BilliardBall(0.52f, -0.06f, 0.03f, Enums::BilliardBallType::STRIPE, Color::GREEN, 14), // Striped green
-		BilliardBall(0.52f, -0.12f, 0.03f, Enums::BilliardBallType::STRIPE, Color::BROWN, 15)  // Striped brown
+		BilliardBall(Constants::CUE_BALL_STARTING_POS_X, Constants::CUE_BALL_STARTING_POS_Y, 0.03f, Enums::BilliardBallType::CUE, Color::WHITE, 0),
+		BilliardBall(0.32f, 0.0f, 0.03f, Enums::BilliardBallType::SOLID, Color::YELLOW, 1),
+		BilliardBall(0.37f, 0.03f, 0.03f, Enums::BilliardBallType::SOLID, Color::BLUE, 2),
+		BilliardBall(0.37f, -0.03f, 0.03f, Enums::BilliardBallType::SOLID, Color::RED, 3),
+		BilliardBall(0.42f, 0.06f, 0.03f, Enums::BilliardBallType::SOLID, Color::PURPLE, 4),
+		BilliardBall(0.42f, 0.0f, 0.03f, Enums::BilliardBallType::STRIPE, Color::PINK, 9),
+		BilliardBall(0.42f, -0.06f, 0.03f, Enums::BilliardBallType::SOLID, Color::ORANGE, 5),
+		BilliardBall(0.47f, 0.03f, 0.03f, Enums::BilliardBallType::SOLID, Color::GREEN, 6),
+		BilliardBall(0.47f, -0.03f, 0.03f, Enums::BilliardBallType::SOLID, Color::BROWN, 7),
+		BilliardBall(0.52f, 0.0f, 0.03f, Enums::BilliardBallType::BLACK, Color::BLACK, 8),
 	};
 
 	drawBalls(balls);
@@ -283,7 +669,7 @@ static std::vector<Character> createCharacters(const std::string text, float sta
 		if (std::isdigit(c)) {
 			finalPath = std::to_string(c - '0');
 		}
-		
+
 		// If the character is a :, use doublecolon.png
 		if (c == ':') {
 			finalPath = "doublecolon";
@@ -334,269 +720,103 @@ static void drawRectangles(std::vector<ColoredRectangle>& rectangles) {
 	}
 }
 
-int main() {
-	if (!glfwInit()) {
-		cerr << "Failed to initialize GLFW" << endl;
-		return -1;
-	}
+static bool isEndOfTurn(std::vector<BilliardBall>& billiardBalls) {
+	return isTurnOver(billiardBalls) && FIRST_TURN_OVER && !pauseOverlayVisible;
+}
 
-	glfwWindowHint(GLFW_RESIZABLE, Constants::windowResizable);
+static BilliardBall* findNextBall(std::vector<BilliardBall>& billiardBalls) {
+	std::qsort(&billiardBalls[1], billiardBalls.size() - 1, sizeof(BilliardBall), [](const void* a, const void* b) {
+		BilliardBall* ball1 = (BilliardBall*)a;
+		BilliardBall* ball2 = (BilliardBall*)b;
 
-	GLFWwindow* window = glfwCreateWindow(Constants::windowWidth, Constants::windowHeight, Constants::windowName, NULL, NULL);
+		return ball1->number - ball2->number;
+		});
 
-	if (!window) {
-		cerr << "Failed to create window" << endl;
-		glfwTerminate();
-		return -1;
-	}
+	for (int i = 0; i < billiardBalls.size(); i++) {
+		// Skip the cue ball
+		if (billiardBalls[i].number == 0) continue;
 
-	glfwSetKeyCallback(window, keyCallback);
-	glfwSetMouseButtonCallback(window, mouseCallback);
+		// If the current ball is the next ball, check if its potted and if its not, find the next ball
+		if (billiardBalls[i].number == nextBall) {
+			// If current ball is not potted, break
+			if (!billiardBalls[i].potted) return &billiardBalls[i];
 
-	glfwSetWindowPos(window, Constants::CalculateWindowPositionX(), Constants::CalculateWindowPositionY());
-	glfwMakeContextCurrent(window);
+			if (i == billiardBalls.size() - 1) {
+				std::cout << "No more balls left!" << std::endl;
+				return nullptr;
+			}
 
-	if (glewInit() != GLEW_OK) {
-		cerr << "Failed to initialize GLEW" << endl;
-		glfwTerminate();
-		return -1;
-	}
-
-	glClearColor(0.8f, 0.8f, 0.8f, 1.0f);
-
-	// Create and configure the billiard table
-	BilliardTable table;
-
-	std::vector<TableEdge> edges = {
-		TableEdge(-0.645f, 0.375f, -0.67f, 0.385f, -0.0325f, 0.385f, -0.0325f, 0.375f, TableEdgeType::TOP, DISPLAY_EDGES),
-		TableEdge(0.0465f, 0.375f, 0.0465f, 0.385f, 0.685f, 0.385f, 0.655f, 0.375f, TableEdgeType::TOP, DISPLAY_EDGES),
-		TableEdge(-0.645f, -0.375f, -0.67f, -0.385f, -0.0325f, -0.385f, -0.0325f, -0.375f, TableEdgeType::BOTTOM, DISPLAY_EDGES),
-		TableEdge(0.0465f, -0.375f, 0.0465f, -0.385f, 0.685f, -0.385f, 0.655f, -0.375f, TableEdgeType::BOTTOM, DISPLAY_EDGES),
-		TableEdge(-0.715f, -0.343f, -0.715f, 0.35f, -0.705f, 0.34f, -0.705f, -0.333f, TableEdgeType::LEFT, DISPLAY_EDGES),
-		TableEdge(0.723f, -0.343f, 0.723f, 0.35f, 0.713f, 0.34f, 0.713f, -0.333f, TableEdgeType::RIGHT, DISPLAY_EDGES)
-	};
-
-	std::vector<PotHole> potholes = {
-		PotHole(0.725f, 0.39f, 0.04f),
-		PotHole(-0.713f, 0.39f, 0.04f),
-		PotHole(0.725f, -0.376f, 0.04f),
-		PotHole(-0.715f, -0.378f, 0.04f),
-		PotHole(0.005f, 0.42f, 0.04f),
-		PotHole(0.005f, -0.405f, 0.04f)
-	};
-
-	std::vector<BilliardBall> billiardBalls = {
-		BilliardBall(Constants::CUE_BALL_STARTING_POS_X, Constants::CUE_BALL_STARTING_POS_Y, 0.03f, Enums::BilliardBallType::CUE, Color::WHITE, 0), // Cue ball
-		BilliardBall(0.32f, 0.0f, 0.03f, Enums::BilliardBallType::SOLID, Color::YELLOW, 1),    // Solid yellow
-		BilliardBall(0.37f, 0.03f, 0.03f, Enums::BilliardBallType::SOLID, Color::BLUE, 2),     // Solid blue
-		BilliardBall(0.37f, -0.03f, 0.03f, Enums::BilliardBallType::SOLID, Color::RED, 3),     // Solid red
-		BilliardBall(0.42f, 0.06f, 0.03f, Enums::BilliardBallType::SOLID, Color::PURPLE, 4),   // Solid purple
-		BilliardBall(0.42f, 0.0f, 0.03f, Enums::BilliardBallType::BLACK, Color::BLACK, 8),    // Solid orange
-		BilliardBall(0.42f, -0.06f, 0.03f, Enums::BilliardBallType::SOLID, Color::GREEN, 6),   // Solid green
-		BilliardBall(0.47f, 0.09f, 0.03f, Enums::BilliardBallType::SOLID, Color::BROWN, 7),    // Solid brown
-		BilliardBall(0.47f, 0.03f, 0.03f, Enums::BilliardBallType::SOLID, Color::ORANGE, 5),    // Black ball
-		BilliardBall(0.47f, -0.03f, 0.03f, Enums::BilliardBallType::STRIPE, Color::YELLOW, 9), // Striped yellow
-		BilliardBall(0.47f, -0.09f, 0.03f, Enums::BilliardBallType::STRIPE, Color::BLUE, 10),  // Striped blue
-		BilliardBall(0.52f, 0.12f, 0.03f, Enums::BilliardBallType::STRIPE, Color::RED, 11),    // Striped red
-		BilliardBall(0.52f, 0.06f, 0.03f, Enums::BilliardBallType::STRIPE, Color::PURPLE, 12), // Striped purple
-		BilliardBall(0.52f, 0.0f, 0.03f, Enums::BilliardBallType::STRIPE, Color::ORANGE, 13),  // Striped orange
-		BilliardBall(0.52f, -0.06f, 0.03f, Enums::BilliardBallType::STRIPE, Color::GREEN, 14), // Striped green
-		BilliardBall(0.52f, -0.12f, 0.03f, Enums::BilliardBallType::STRIPE, Color::BROWN, 15)  // Striped brown
-	};
-
-	std::vector<ColoredRectangle> coloredRectangles = {
-		ColoredRectangle(-1.f, -1.f, 1.f, -1.f, 1.f, 1.f, -1.f, 1.f, 0.0f),
-		ColoredRectangle(-0.2f, -0.1f, 0.2f, -0.1f, 0.2f, 0.1f, -0.2f, 0.1f, 0.0f),
-		ColoredRectangle(-0.2f, -0.4f, 0.2f, -0.4f, 0.2f, -0.2f, -0.2f, -0.2f, 0.0f)
-	};
-
-	drawBilliardTable(table);
-	drawEdges(edges);
-	drawPotholes(potholes);
-	drawBalls(billiardBalls);
-	drawRectangles(coloredRectangles);
-
-	std::vector<Character> index = drawText("RA133/2021", 0.5f, 0.91f, 0.03f, 0.05f);
-	std::vector<Character> nameAndLastName = drawText("Nenad Gvozdenac", 0.5f, 0.85f, 0.03f, 0.05f);
-	std::vector<Character> cueSpeed = drawText("Cue speed: 3", -0.9f, 0.91f, 0.03f, 0.05f);
-
-	std::vector<Character> overlay = drawText("Game over!", -0.275f, 0.5f, 0.06f, 0.1f);
-	std::vector<Character> continueText = drawText("Continue", -0.125f, -0.025f, 0.03f, 0.05f);
-	std::vector<Character> exitText = drawText("Exit", -0.065f, -0.325f, 0.03f, 0.05f);
-
-	BilliardBall& cueBall = billiardBalls[0];
-	Cue cue(&cueBall, 1.f, 0.025f, 180, true, Color::BROWN);
-	cue.draw("basic.vert", "ball.frag", nullptr);
-
-	float previousTime = glfwGetTime();  // Initialize previous time
-	float dt = 0.0f;  // Delta time
-
-	bool RECREATED_CUE = false;
-
-	while (!glfwWindowShouldClose(window) && !GAME_OVER) {
-		float frameStartTime = glfwGetTime();
-
-		// Get current time and compute delta time (dt)
-		float currentTime = glfwGetTime();
-		dt = currentTime - previousTime;  // Calculate the difference
-		previousTime = currentTime;  // Update previousTime for the next iteration
-
-		// Left click
-		if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS && !overlayVisible) {
-			double xpos, ypos;
-			glfwGetCursorPos(window, &xpos, &ypos);
-
-			cue.rotateCue(xpos, ypos);
-		}
-
-		// Right click
-		if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS && !cueBall.moving() && !overlayVisible) {
-			float angle = cue.angle;
-			cueBall.hitBall(angle, cue.hitSpeed);
-			GAME_STARTED = true;
-			RECREATED_CUE = false;
-			FIRST_BALL_HIT = false;
-			cue.visible = false;
-			hideCueSpeed(cueSpeed);
-		}
-
-		// Check if the game is over
-		if (checkIfGameOver(billiardBalls) && !overlayVisible) {
-			GAME_OVER = true;
-			cout << "Game over!" << endl;
-		}
-
-		// On press q, reset the cue ball
-		if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS && !overlayVisible) {
-			cueBall.reset();
-			resetCue(cueBall, cue);
-			resetAllBalls(billiardBalls);
-			GAME_STARTED = false;
-			setCueSpeed(cueSpeed, Enums::HIT_SPEED::MEDIUM);
-		}
-
-		// On press e, reset the angle of the cue
-		if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS && !overlayVisible) {
-			cue.angle = 180;
-			resetCue(cueBall, cue);
-		}
-
-		// Before game started, cue ball can be moved from y -0.312 to 0.3 ; x -0.57 to -0.345
-		if (!GAME_STARTED && !overlayVisible) {
-			if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS && cue.y1 <= 0.300f)
-				moveCueBall(cue, cueBall, Enums::MOVE_DIRECTION::UP, TEST_MOVE_SPEED);
-
-			if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS && cue.y2 >= -0.312f)
-				moveCueBall(cue, cueBall, Enums::MOVE_DIRECTION::DOWN, TEST_MOVE_SPEED);
-
-			if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS && cue.x1 >= -0.57f)
-				moveCueBall(cue, cueBall, Enums::MOVE_DIRECTION::LEFT, TEST_MOVE_SPEED);
-
-			if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS && cue.x3 <= -0.345f)
-				moveCueBall(cue, cueBall, Enums::MOVE_DIRECTION::RIGHT, TEST_MOVE_SPEED);
-		}
-
-		// 1 - Very slow speed; 2 - Slow speed; 3 - Normal speed; 4 - Fast speed; 5 - Very fast speed
-		if (glfwGetKey(window, GLFW_KEY_1) == GLFW_PRESS && !overlayVisible) {
-			setCueSpeed(cueSpeed, Enums::HIT_SPEED::VERY_SLOW);
-			cue.switchCueSpeed(Enums::HIT_SPEED::VERY_SLOW);
-		}
-		else if (glfwGetKey(window, GLFW_KEY_2) == GLFW_PRESS && !overlayVisible) {
-			setCueSpeed(cueSpeed, Enums::HIT_SPEED::SLOW);
-			cue.switchCueSpeed(Enums::HIT_SPEED::SLOW);
-		}
-		else if (glfwGetKey(window, GLFW_KEY_3) == GLFW_PRESS && !overlayVisible) {
-			setCueSpeed(cueSpeed, Enums::HIT_SPEED::MEDIUM);
-			cue.switchCueSpeed(Enums::HIT_SPEED::MEDIUM);
-		}
-		else if (glfwGetKey(window, GLFW_KEY_4) == GLFW_PRESS && !overlayVisible) {
-			setCueSpeed(cueSpeed, Enums::HIT_SPEED::FAST);
-			cue.switchCueSpeed(Enums::HIT_SPEED::FAST);
-		}
-		else if (glfwGetKey(window, GLFW_KEY_5) == GLFW_PRESS && !overlayVisible) {
-			setCueSpeed(cueSpeed, Enums::HIT_SPEED::VERY_FAST);
-			cue.switchCueSpeed(Enums::HIT_SPEED::VERY_FAST);
-		}
-
-		// Check if the cue ball is potted or black ball was first hit
-		if (checkIfFoul(billiardBalls) && !overlayVisible) {
-			cout << "Foul!" << endl;
-			cueBall.reset();
-			resetAllBalls(billiardBalls);
-		}
-
-		if (isTurnOver(billiardBalls) && GAME_STARTED && !overlayVisible) {
-			if (!RECREATED_CUE) {
-				resetCue(cueBall, cue);
-				setCueSpeed(cueSpeed, Enums::HIT_SPEED::MEDIUM);
-				RECREATED_CUE = true;
+			// Find the next ball that is not potted
+			for (int j = i + 1; j < billiardBalls.size(); j++) {
+				if (!billiardBalls[j].potted) {
+					nextBall = billiardBalls[j].number;
+					return &billiardBalls[j];
+				}
 			}
 		}
+	}
 
-		glClearColor(0.8f, 0.8f, 0.8f, 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT);
+	std::cout << "No more balls left!" << std::endl;
 
-		// Render the table
-		renderBilliardTable(table);
+	return nullptr;
+}
 
-		// Render the edges
-		renderEdges(edges);
+static void drawNextBall(BilliardBall** nextBall, Color color) {
+	(*nextBall)->color = color;
+	(*nextBall)->draw("basic.vert", "ball.frag", nullptr);
+}
 
-		// Render the pothole
-		renderPotholes(potholes, dt);
+static void renderNextBall(BilliardBall* nextBall) {
+	nextBall->render(0.0f);
+}
 
-		// Render the cue ball
-		renderBalls(billiardBalls, dt);
-
-		// Check all collision with balls
-		for (BilliardBall& ball : billiardBalls) {
-			checkCollisionsWithBalls(ball, billiardBalls);
+static BilliardBall find9Ball(std::vector<BilliardBall>& balls) {
+	for (BilliardBall& ball : balls) {
+		if (ball.number == 9) {
+			return ball;
 		}
+	}
+}
 
-		// Check all collision with edges
-		for (BilliardBall& ball : billiardBalls) {
-			checkCollisionsWithEdges(ball, edges);
-		}
+static bool isGameOver(std::vector<BilliardBall>& balls) {
+	return find9Ball(balls).potted;
+}
 
-		// Check all collision with holes
-		for (BilliardBall& ball : billiardBalls) {
-			checkCollisionsWithHoles(ball, potholes);
-		}
+static int findNumberOfBallsPotted(std::vector<BilliardBall>& balls) {
+	int count = 0;
 
-		// Render the cue
-		cue.render();
-
-		// Render the index
-		for (Character& character : index) {
-			character.renderCharacter();
-		}
-
-		// Render the name
-		for (Character& character : nameAndLastName) {
-			character.renderCharacter();
-		}
-
-		// Render the cue speed
-		for (Character& character : cueSpeed) {
-			character.renderCharacter();
-		}
-
-		// Render overlay if active
-		renderOverlay(window, coloredRectangles, overlay, continueText, exitText);
-
-		glfwSwapBuffers(window);
-		glfwPollEvents();
-
-		// Frame end time and FPS cap
-		float frameEndTime = glfwGetTime();
-		float frameDuration = frameEndTime - frameStartTime;
-
-		if (frameDuration < TARGET_FRAME_TIME) {
-			float sleepTime = TARGET_FRAME_TIME - frameDuration;
-			std::this_thread::sleep_for(std::chrono::duration<float>(sleepTime));
+	for (BilliardBall& ball : balls) {
+		if (ball.potted) {
+			count++;
 		}
 	}
 
-	glfwTerminate();
-	return 0;
+	return count;
+}
+
+static int findNumberOfBallsLeft(std::vector<BilliardBall>& balls) {
+	int count = 0;
+
+	for (BilliardBall& ball : balls) {
+		if (!ball.potted) {
+			count++;
+		}
+	}
+
+	return count;
+}
+
+static void setBallsPotted(std::vector<Character>& ballsPotted, int ballsPottedN) {
+	ballsPottedNumber = ballsPottedN;
+	ballsPotted = drawText("Balls potted: " + to_string(ballsPottedNumber), -0.9f, 0.79f, 0.03f, 0.05f);
+}
+
+static void setBallsLeft(std::vector<Character>& ballsLeft, int ballsLeftN) {
+	ballsLeftNumber = ballsLeftN;
+	ballsLeft = drawText("Balls left: " + to_string(ballsLeftNumber), -0.9f, 0.73f, 0.03f, 0.05f);
+}
+
+static void setTurnNumber(std::vector<Character>& turnNumber, int turnNumberNu) {
+	turnNumberN = turnNumberNu;
+	turnNumber = drawText("Turn number: " + to_string(turnNumberNu), -0.9f, 0.67f, 0.03f, 0.05f);
 }
