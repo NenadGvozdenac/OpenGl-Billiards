@@ -40,15 +40,6 @@ void Cue::draw(const char* vsSource, const char* fsSource, const char* texturePa
 	if (shaderProgram == 0)
 		shaderProgram = Shader::createShader(vsSource, fsSource);
 
-	// Set up color uniform
-	GLint colorUniformLocation = glGetUniformLocation(shaderProgram, "ballColor");
-	glUseProgram(shaderProgram);
-
-	// Pass the color values to the shader
-	glUniform3f(colorUniformLocation, color.r, color.g, color.b);
-
-	glUseProgram(0); // Unbind the shader program when done
-
 	GLuint indices[] = {
 		0, 1, 2,   // First triangle
 		0, 2, 3    // Second triangle
@@ -99,6 +90,10 @@ void Cue::draw(const char* vsSource, const char* fsSource, const char* texturePa
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
 	glBindVertexArray(0);
+
+	// Bind image texture
+	image = new Image(texturePath);
+	image->loadImage();
 }
 
 void Cue::render() {
@@ -109,12 +104,12 @@ void Cue::render() {
 	glUseProgram(shaderProgram);
 	glBindVertexArray(VAO);
 
-	// Re-apply color uniform in case the color changes dynamically
-	GLint colorUniformLocation = glGetUniformLocation(shaderProgram, "ballColor");
-	glUniform3f(colorUniformLocation, color.r, color.g, color.b);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, image->getTextureID());
 
 	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
+	glBindTexture(GL_TEXTURE_2D, 0);
 	glBindVertexArray(0);
 	glUseProgram(0);
 }
@@ -148,7 +143,7 @@ void Cue::rotateCue(float xpos, float ypos) {
 	angle = atan2(dy, dx) * (180.0f / Constants::PI);
 
 	// Redraw the cue with the new angle
-	draw("basic.vert", "ball.frag", nullptr);
+	draw("basic.vert", "basic.frag", "strides/cue.png");
 }
 
 float calculateOffset(Enums::HIT_SPEED speed) {

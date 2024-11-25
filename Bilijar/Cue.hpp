@@ -13,6 +13,7 @@ public:
 	float hitSpeed;
 
 	Color color;
+	Image* image;
 
 	Cue(BilliardBall* cueBall, float width, float height, float angle, bool visible, float color[]);
 

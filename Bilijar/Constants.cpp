@@ -52,11 +52,9 @@ unsigned int Shader::compileShader(GLenum type, const char* source)
 	{
 		ss << file.rdbuf();
 		file.close();
-		std::cout << "Uspjesno procitao fajl sa putanje \"" << source << "\"!" << std::endl;
 	}
 	else {
 		ss << "";
-		std::cout << "Greska pri citanju fajla sa putanje \"" << source << "\"!" << std::endl;
 	}
 	std::string temp = ss.str();
 	const char* sourceCode = temp.c_str();
@@ -76,8 +74,6 @@ unsigned int Shader::compileShader(GLenum type, const char* source)
 			printf("VERTEX");
 		else if (type == GL_FRAGMENT_SHADER)
 			printf("FRAGMENT");
-		printf(" sejder ima gresku! Greska: \n");
-		printf(infoLog);
 	}
 	return shader;
 }
@@ -106,7 +102,6 @@ unsigned int Shader::createShader(const char* vsSource, const char* fsSource)
 	if (success == GL_FALSE)
 	{
 		glGetShaderInfoLog(program, 512, NULL, infoLog);
-		std::cout << "Objedinjeni sejder ima gresku! Greska: \n";
 		std::cout << infoLog << std::endl;
 	}
 

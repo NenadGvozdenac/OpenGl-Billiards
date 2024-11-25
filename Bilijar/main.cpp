@@ -33,6 +33,15 @@ int turnNumberN = 1;
 int ballsPottedNumber = 0;
 int ballsLeftNumber = 9;
 
+bool CUEBALL_VISIBLE = true;
+
+typedef enum Player {
+	PLAYER1,
+	PLAYER2
+} Player;
+
+Player currentPlayer = PLAYER1;
+
 std::vector<Character> drawText(std::string text, float startX, float startY, float charWidth, float charHeight);
 
 void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
@@ -79,6 +88,8 @@ int findNumberOfBallsLeft(std::vector<BilliardBall>& balls);
 void setBallsPotted(std::vector<Character>& ballsPotted, int ballsPottedNumber);
 void setBallsLeft(std::vector<Character>& ballsLeft, int ballsLeftNumber);
 void setTurnNumber(std::vector<Character>& turnNumber, int turnNumberN);
+void setCurrentPlayer(std::vector<Character>& currentPlayerText, Player player);
+void setFoulText(std::vector<Character>& foulText, bool foul);
 
 int main() {
 	if (!glfwInit()) {
@@ -166,6 +177,8 @@ int main() {
 	std::vector<Character> ballsPotted = drawText("Balls potted: " + to_string(ballsPottedNumber), -0.9f, 0.79f, 0.03f, 0.05f);
 	std::vector<Character> ballsLeft = drawText("Balls left: " + to_string(ballsLeftNumber), -0.9f, 0.73f, 0.03f, 0.05f);
 	std::vector<Character> turnNumber = drawText("Turn number: " + to_string(turnNumberN), -0.9f, 0.67f, 0.03f, 0.05f);
+	std::vector<Character> currentPlayerText = drawText("Current player: " + (currentPlayer == Player::PLAYER1 ? std::string("PLAYER1") : std::string("PLAYER2")) , -0.9f, 0.61f, 0.03f, 0.05f);
+	std::vector<Character> foulText = drawText("", -0.1f, 0.55f, 0.05f, 0.1f);
 
 	std::vector<Character> gamePaused = drawText("Game paused", -0.335f, 0.5f, 0.06f, 0.1f);
 	std::vector<Character> continueText = drawText("Continue", -0.125f, -0.025f, 0.03f, 0.05f);
@@ -176,7 +189,7 @@ int main() {
 
 	BilliardBall& cueBall = billiardBalls[0];
 	Cue cue(&cueBall, 1.f, 0.025f, 180, true, Color::BROWN);
-	cue.draw("basic.vert", "ball.frag", nullptr);
+	cue.draw("basic.vert", "basic.frag", "strides/cue.png");
 
 	float previousTime = glfwGetTime();  // Initialize previous time
 	float dt = 0.0f;  // Delta time
@@ -208,6 +221,8 @@ int main() {
 			FIRST_BALL_HIT = false;
 			cue.visible = false;
 			hideCueSpeed(cueSpeed);
+
+			setFoulText(foulText, false);
 		}
 
 		if (GAME_STARTED) {
@@ -235,6 +250,7 @@ int main() {
 			setBallsPotted(ballsPotted, ballsPottedNumber);
 			setBallsLeft(ballsLeft, ballsLeftNumber);
 			setTurnNumber(turnNumber, turnNumberN);
+			setCurrentPlayer(currentPlayerText, Player::PLAYER1);
 		}
 
 		// On press e, reset the angle of the cue
@@ -277,10 +293,18 @@ int main() {
 				resetAllBalls(billiardBalls);
 				GAME_STARTED = false;
 				FIRST_BALL_HIT = false;
-				RECREATED_CUE = true;
 				FIRST_TURN_OVER = false;
+				RECREATED_CUE = true;
 				setCueSpeed(cueSpeed, Enums::HIT_SPEED::MEDIUM);
 				gameOverOverlayVisible = false;
+
+				turnNumberN = 1;
+				ballsPottedNumber = 0;
+				ballsLeftNumber = 9;
+
+				setBallsPotted(ballsPotted, ballsPottedNumber);
+				setBallsLeft(ballsLeft, ballsLeftNumber);
+				setTurnNumber(turnNumber, turnNumberN);
 			}
 
 			// Check "Exit" button bounds
@@ -309,13 +333,6 @@ int main() {
 		else if (glfwGetKey(window, GLFW_KEY_5) == GLFW_PRESS && !pauseOverlayVisible) {
 			setCueSpeed(cueSpeed, Enums::HIT_SPEED::VERY_FAST);
 			cue.switchCueSpeed(Enums::HIT_SPEED::VERY_FAST);
-		}
-
-		// Check if the cue ball is potted or black ball was first hit
-		if (checkIfFoul(billiardBalls) && !pauseOverlayVisible) {
-			cout << "Foul!" << endl;
-			cueBall.reset();
-			resetAllBalls(billiardBalls);
 		}
 
 		glClearColor(0.8f, 0.8f, 0.8f, 1.0f);
@@ -381,6 +398,16 @@ int main() {
 			character.renderCharacter();
 		}
 
+		// Render the current player
+		for (Character& character : currentPlayerText) {
+			character.renderCharacter();
+		}
+
+		// Render the foul text
+		for (Character& character : foulText) {
+			character.renderCharacter();
+		}
+
 		// End of the turn
 		if (isEndOfTurn(billiardBalls)) {
 			for (Character& character : nextBallText) {
@@ -388,19 +415,15 @@ int main() {
 			}
 
 			if (!RECREATED_CUE) {
-				if (isGameOver(billiardBalls)) {
+				if (isGameOver(billiardBalls) && FOUL && !gameOverOverlayVisible) {
 					gameOverOverlayVisible = true;
-					BilliardBall* ballNew = findNextBall(billiardBalls);
-
-					if (STOP_WRITING)
-						if (ballNew == nullptr || !FOUL) {
-							gameOver = drawText("You won", -0.2f, 0.5f, 0.06f, 0.1f);
-							STOP_WRITING = true;
-						}
-						else {
-							gameOver = drawText("You lost", -0.3f, 0.5f, 0.06f, 0.1f);
-							STOP_WRITING = true;
-						}
+					std::string winner = currentPlayer == PLAYER1 ? "Player1" : "Player2";
+					gameOver = drawText(winner + " you won", -0.5f, 0.5f, 0.06f, 0.1f);
+				}
+				else if (isGameOver(billiardBalls) && !FOUL && !gameOverOverlayVisible) {
+					gameOverOverlayVisible = true;
+					std::string winner = currentPlayer == PLAYER1 ? "Player2" : "Player1";
+					gameOver = drawText(winner + " you won", -0.5f, 0.5f, 0.06f, 0.1f);
 				}
 
 				if (!isGameOver(billiardBalls)) {
@@ -415,9 +438,25 @@ int main() {
 					}
 				}
 
+				int currentPottedBalls = ballsPottedNumber;
+
 				setBallsPotted(ballsPotted, findNumberOfBallsPotted(billiardBalls));
 				setBallsLeft(ballsLeft, findNumberOfBallsLeft(billiardBalls) - 1);
 				setTurnNumber(turnNumber, turnNumberN + 1);
+
+				if (FOUL || findNumberOfBallsPotted(billiardBalls) == currentPottedBalls)
+					setCurrentPlayer(currentPlayerText, currentPlayer == Player::PLAYER1 ? PLAYER2 : PLAYER1);
+				else
+					setCurrentPlayer(currentPlayerText, currentPlayer);
+
+				if (FOUL) {
+					cueBall.reset();
+					resetCue(cueBall, cue);
+					setFoulText(foulText, true);
+				}
+
+				FOUL = false;
+				CUEBALL_VISIBLE = true;
 			}
 
 			// Render the next ball
@@ -505,7 +544,7 @@ static void renderOverlay(GLFWwindow* window, bool condition, std::vector<Colore
 
 static bool resetCue(BilliardBall& cueBall, Cue& cue) {
 	cue = Cue(&cueBall, 1.f, 0.025f, 180, true, Color::BROWN);
-	cue.draw("basic.vert", "ball.frag", nullptr);
+	cue.draw("basic.vert", "basic.frag", "strides/cue.png");
 	return true;
 }
 
@@ -524,8 +563,7 @@ static void checkCollisionsWithBalls(BilliardBall& ball, std::vector<BilliardBal
 					FIRST_BALL_HIT = true;
 
 					if (ball.number == 0 && otherBall.number != nextBall && FIRST_BALL_HIT && FIRST_TURN_OVER) {
-						cout << "Foul!" << endl;
-						ball.reset();
+						std::cout << "FOUL" << std::endl;
 						FOUL = true;
 					}
 				}
@@ -542,7 +580,12 @@ static void checkCollisionsWithEdges(BilliardBall& ball, std::vector<TableEdge>&
 
 static void checkCollisionsWithHoles(BilliardBall& ball, std::vector<PotHole>& holes) {
 	for (PotHole& hole : holes) {
-		ball.checkIfInHole(&hole);
+		if (ball.checkIfInHole(&hole)) {
+			if (ball.number == 0) {
+				CUEBALL_VISIBLE = false;
+				FOUL = true;
+			}
+		}
 	}
 }
 
@@ -569,7 +612,7 @@ static void drawBalls(std::vector<BilliardBall>& balls) {
 }
 
 static void drawCue(BilliardBall& cueBall, Cue& cue) {
-	cue.draw("basic.vert", "ball.frag", nullptr);
+	cue.draw("basic.vert", "basic.frag", "strides/cue.png");
 }
 
 static void renderBilliardTable(BilliardTable& table) {
@@ -590,7 +633,12 @@ static void renderPotholes(std::vector<PotHole>& holes, float dt) {
 
 static void renderBalls(std::vector<BilliardBall>& balls, float dt) {
 	for (BilliardBall& ball : balls) {
-		ball.render(dt);
+		if(ball.number == 0) 
+			if(CUEBALL_VISIBLE)
+				ball.render(dt);
+
+		if(ball.number != 0)
+			ball.render(dt);
 	}
 }
 
@@ -819,4 +867,13 @@ static void setBallsLeft(std::vector<Character>& ballsLeft, int ballsLeftN) {
 static void setTurnNumber(std::vector<Character>& turnNumber, int turnNumberNu) {
 	turnNumberN = turnNumberNu;
 	turnNumber = drawText("Turn number: " + to_string(turnNumberNu), -0.9f, 0.67f, 0.03f, 0.05f);
+}
+
+static void setCurrentPlayer(std::vector<Character>& playerText, Player player) {
+	playerText = drawText("Current player: " + (player == Player::PLAYER1 ? std::string("PLAYER1") : std::string("PLAYER2")), -0.9f, 0.61f, 0.03f, 0.05f);
+	currentPlayer = player;
+}
+
+static void setFoulText(std::vector<Character>& foulText, bool foul) {
+	foulText = drawText(foul ? "FOUL" : "", -0.1f, 0.55f, 0.05f, 0.1f);
 }
