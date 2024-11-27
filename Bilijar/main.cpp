@@ -13,7 +13,7 @@
 #include "ColoredRectangle.hpp"
 
 const bool DISPLAY_EDGES = false;
-const float TARGET_FPS = 144.0f;
+const float TARGET_FPS = 60.0f;
 const float TARGET_FRAME_TIME = 1.0f / TARGET_FPS;
 bool GAME_STARTED = false;
 const float TEST_MOVE_SPEED = 0.03f;
@@ -28,7 +28,7 @@ bool gameOverOverlayVisible = false;
 bool FOUL = false;
 bool STOP_WRITING = false;
 
-int nextBall = 1;
+int nextBallNumber = 1;
 int turnNumberN = 1;
 int ballsPottedNumber = 0;
 int ballsLeftNumber = 9;
@@ -242,6 +242,7 @@ int main() {
 			FIRST_TURN_OVER = false;
 			RECREATED_CUE = true;
 			setCueSpeed(cueSpeed, Enums::HIT_SPEED::MEDIUM);
+			nextBallNumber = 1;
 
 			turnNumberN = 1;
 			ballsPottedNumber = 0;
@@ -251,6 +252,12 @@ int main() {
 			setBallsLeft(ballsLeft, ballsLeftNumber);
 			setTurnNumber(turnNumber, turnNumberN);
 			setCurrentPlayer(currentPlayerText, Player::PLAYER1);
+
+			BilliardBall* ballNew = findNextBall(billiardBalls);
+
+			if (ballNew != nullptr) {
+				drawNextBall(&nextBall, ballNew->color);
+			}
 		}
 
 		// On press e, reset the angle of the cue
@@ -297,6 +304,7 @@ int main() {
 				RECREATED_CUE = true;
 				setCueSpeed(cueSpeed, Enums::HIT_SPEED::MEDIUM);
 				gameOverOverlayVisible = false;
+				nextBallNumber = 1;
 
 				turnNumberN = 1;
 				ballsPottedNumber = 0;
@@ -305,6 +313,12 @@ int main() {
 				setBallsPotted(ballsPotted, ballsPottedNumber);
 				setBallsLeft(ballsLeft, ballsLeftNumber);
 				setTurnNumber(turnNumber, turnNumberN);
+
+				BilliardBall* ballNew = findNextBall(billiardBalls);
+
+				if (ballNew != nullptr) {
+					drawNextBall(&nextBall, ballNew->color);
+				}
 			}
 
 			// Check "Exit" button bounds
@@ -562,7 +576,7 @@ static void checkCollisionsWithBalls(BilliardBall& ball, std::vector<BilliardBal
 				if (ball.type == Enums::BilliardBallType::CUE && !FIRST_BALL_HIT) {
 					FIRST_BALL_HIT = true;
 
-					if (ball.number == 0 && otherBall.number != nextBall && FIRST_BALL_HIT && FIRST_TURN_OVER) {
+					if (ball.number == 0 && otherBall.number != nextBallNumber && FIRST_BALL_HIT && FIRST_TURN_OVER) {
 						std::cout << "FOUL" << std::endl;
 						FOUL = true;
 					}
@@ -581,7 +595,7 @@ static void checkCollisionsWithEdges(BilliardBall& ball, std::vector<TableEdge>&
 static void checkCollisionsWithHoles(BilliardBall& ball, std::vector<PotHole>& holes) {
 	for (PotHole& hole : holes) {
 		if (ball.checkIfInHole(&hole)) {
-			if (ball.number == 0) {
+			if (ball.number == 0 && CUEBALL_VISIBLE) {
 				CUEBALL_VISIBLE = false;
 				FOUL = true;
 			}
@@ -684,7 +698,7 @@ static bool checkIfFoul(std::vector<BilliardBall>& balls) {
 	return false;
 }
 
-static void resetAllBalls(vector<BilliardBall>& balls) {
+static void resetAllBalls(std::vector<BilliardBall>& balls) {
 	balls = {
 		BilliardBall(Constants::CUE_BALL_STARTING_POS_X, Constants::CUE_BALL_STARTING_POS_Y, 0.03f, Enums::BilliardBallType::CUE, Color::WHITE, 0),
 		BilliardBall(0.32f, 0.0f, 0.03f, Enums::BilliardBallType::SOLID, Color::YELLOW, 1),
@@ -785,7 +799,7 @@ static BilliardBall* findNextBall(std::vector<BilliardBall>& billiardBalls) {
 		if (billiardBalls[i].number == 0) continue;
 
 		// If the current ball is the next ball, check if its potted and if its not, find the next ball
-		if (billiardBalls[i].number == nextBall) {
+		if (billiardBalls[i].number == nextBallNumber) {
 			// If current ball is not potted, break
 			if (!billiardBalls[i].potted) return &billiardBalls[i];
 
@@ -797,7 +811,7 @@ static BilliardBall* findNextBall(std::vector<BilliardBall>& billiardBalls) {
 			// Find the next ball that is not potted
 			for (int j = i + 1; j < billiardBalls.size(); j++) {
 				if (!billiardBalls[j].potted) {
-					nextBall = billiardBalls[j].number;
+					nextBallNumber = billiardBalls[j].number;
 					return &billiardBalls[j];
 				}
 			}

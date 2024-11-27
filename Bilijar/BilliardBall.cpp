@@ -213,29 +213,35 @@ bool BilliardBall::checkIfCollisionWithWall(TableEdge* edge) {
 	case TableEdgeType::TOP:
 		if (y + radius <= y2 + offset && y + radius >= y1 - offset && x <= x4 && x >= x1) {
 			vy = -vy;
+			y = min(y1, y2) - radius - offset; // Move ball to the edge
 			return true;
 		}
 		break;
 	case TableEdgeType::BOTTOM:
 		if (y - radius <= y1 + offset && y - radius >= y2 - offset && x <= x4 && x >= x1) {
 			vy = -vy;
+			y = max(y1, y2) + radius + offset; // Move ball to the edge
 			return true;
 		}
 		break;
 	case TableEdgeType::RIGHT:
 		if (x + radius <= x1 + offset && x + radius >= x3 - offset && y <= y2 && y >= y1) {
 			vx = -vx;
+			x = min(x1, x3) - radius - offset; // Move ball to the edge
 			return true;
 		}
 		break;
 	case TableEdgeType::LEFT:
 		if (x - radius <= x3 + offset && x - radius >= x1 - offset && y <= y3 && y >= y4) {
 			vx = -vx;
+			x = max(x3, x1) + radius + offset; // Move ball to the edge
 			return true;
 		}
 		break;
 	}
+	return false; // No collision detected
 }
+
 
 void BilliardBall::applyImpulse(float impulseX, float impulseY) {
 	vx += impulseX / mass;
