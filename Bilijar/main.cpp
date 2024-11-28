@@ -204,6 +204,14 @@ int main() {
 		dt = currentTime - previousTime;  // Calculate the difference
 		previousTime = currentTime;  // Update previousTime for the next iteration
 
+		if (dt < previousTime) {
+			// Sleep for the remainder of the frame time if deltaTime is less than the target
+			glfwWaitEventsTimeout(TARGET_FRAME_TIME - dt);
+			currentTime = glfwGetTime();
+			dt = currentTime - previousTime;
+		}
+		previousTime = currentTime;
+
 		// Left click
 		if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS && !pauseOverlayVisible) {
 			double xpos, ypos;
@@ -486,15 +494,6 @@ int main() {
 
 		glfwSwapBuffers(window);
 		glfwPollEvents();
-
-		// Frame end time and FPS cap
-		float frameEndTime = glfwGetTime();
-		float frameDuration = frameEndTime - frameStartTime;
-
-		if (frameDuration < TARGET_FRAME_TIME) {
-			float sleepTime = TARGET_FRAME_TIME - frameDuration;
-			std::this_thread::sleep_for(std::chrono::duration<float>(sleepTime));
-		}
 	}
 
 	glfwTerminate();
