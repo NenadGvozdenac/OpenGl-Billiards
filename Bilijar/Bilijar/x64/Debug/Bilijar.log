@@ -1,0 +1,19 @@
+﻿  main.cpp
+C:\Users\matri\Desktop\grafika\OpenGl-Billiards\Bilijar\ColoredRectangle.hpp(12,47): warning C4244: 'argument': conversion from 'unsigned int' to 'float', possible loss of data
+  (compiling source file 'main.cpp')
+  
+C:\Users\matri\Desktop\grafika\OpenGl-Billiards\Bilijar\main.cpp(162,64): warning C4244: 'argument': conversion from 'float' to 'unsigned int', possible loss of data
+C:\Users\matri\Desktop\grafika\OpenGl-Billiards\Bilijar\main.cpp(163,72): warning C4244: 'argument': conversion from 'float' to 'unsigned int', possible loss of data
+C:\Users\matri\Desktop\grafika\OpenGl-Billiards\Bilijar\main.cpp(164,74): warning C4244: 'argument': conversion from 'float' to 'unsigned int', possible loss of data
+C:\Users\matri\Desktop\grafika\OpenGl-Billiards\Bilijar\main.cpp(194,21): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+C:\Users\matri\Desktop\grafika\OpenGl-Billiards\Bilijar\main.cpp(200,24): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+C:\Users\matri\Desktop\grafika\OpenGl-Billiards\Bilijar\main.cpp(203,21): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+C:\Users\matri\Desktop\grafika\OpenGl-Billiards\Bilijar\main.cpp(210,29): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+C:\Users\matri\Desktop\grafika\OpenGl-Billiards\Bilijar\main.cpp(220,24): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+C:\Users\matri\Desktop\grafika\OpenGl-Billiards\Bilijar\main.cpp(220,18): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+C:\Users\matri\Desktop\grafika\OpenGl-Billiards\Bilijar\main.cpp(301,13): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+C:\Users\matri\Desktop\grafika\OpenGl-Billiards\Bilijar\main.cpp(302,13): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+C:\Users\matri\Desktop\grafika\OpenGl-Billiards\Bilijar\main.cpp(532,11): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+C:\Users\matri\Desktop\grafika\OpenGl-Billiards\Bilijar\main.cpp(533,11): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+C:\Users\matri\Desktop\grafika\OpenGl-Billiards\Bilijar\main.cpp(849,1): warning C4715: 'find9Ball': not all control paths return a value
+  Bilijar.vcxproj -> C:\Users\matri\Desktop\grafika\OpenGl-Billiards\Bilijar\x64\Debug\Bilijar.exe

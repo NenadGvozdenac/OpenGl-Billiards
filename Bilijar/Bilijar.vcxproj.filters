@@ -1,0 +1,40 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="BilliardBall.cpp" />
+    <ClCompile Include="BilliardTable.cpp" />
+    <ClCompile Include="Constants.cpp" />
+    <ClCompile Include="Cue.cpp" />
+    <ClCompile Include="Image.cpp" />
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="Pothole.cpp" />
+    <ClCompile Include="Rectangle.cpp" />
+    <ClCompile Include="TableEdge.cpp" />
+    <ClCompile Include="ColoredRectangle.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="BilliardBall.hpp" />
+    <ClInclude Include="BilliardTable.hpp" />
+    <ClInclude Include="Circle.hpp" />
+    <ClInclude Include="Constants.hpp" />
+    <ClInclude Include="Cue.hpp" />
+    <ClInclude Include="Image.hpp" />
+    <ClInclude Include="Pothole.hpp" />
+    <ClInclude Include="Rectangle.hpp" />
+    <ClInclude Include="stb_image.h" />
+    <ClInclude Include="TableEdge.hpp" />
+    <ClInclude Include="Character.hpp" />
+    <ClInclude Include="ColoredRectangle.hpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="Sprites\billiard_table.jpg" />
+    <Image Include="strides\SolidYellow.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="ball.frag" />
+    <None Include="circle.frag" />
+    <None Include="edgefrag.frag" />
+    <None Include="packages.config" />
+    <None Include="stripped_ball.frag" />
+  </ItemGroup>
+</Project>
